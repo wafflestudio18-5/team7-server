@@ -21,5 +21,12 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('user.urls')),
-    path('admin/', include('posting.urls')),
+    path('api/v1/', include('posting.urls')),
 ]
+
+if settings.DEBUG_TOOLBAR:
+    import debug_toolbar
+
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
