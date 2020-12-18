@@ -20,8 +20,9 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include('user.urls')),
-    path('api/v1/', include('posting.urls')),
+    path('', include('user.urls')),
+    path('', include('posting.urls')),
+    path('', include('title.urls')),
 ]
 
 if settings.DEBUG_TOOLBAR:
