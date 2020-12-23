@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'subscription',
 
     'django.contrib.sites',  # allauth
 
@@ -89,8 +90,12 @@ WSGI_APPLICATION = 'written.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '127.0.0.1',
+        'PORT': 3306,
+        'NAME': 'written_waffle',
+        'USER': 'written-waffle',
+        'PASSWORD': 'toyproject'
     }
 }
 
