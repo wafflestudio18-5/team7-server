@@ -21,21 +21,18 @@ from written.error_codes import *
 # GET /users/subscribed/
 # GET /users/subscriber/
 
-def get_writer(pk):
+def get_writer(writer_id):
     try:
-        return User.objects.get(pk=pk)
+        return User.objects.get(pk=writer_id)
     except User.DoesNotExist:
         return None
 
 
-def get_subscription(subscriber_id, writer_id, sub_or_unsub):
+def get_subscription(subscriber_id, writer_id):
     try:
-        return Subscription.objects.get(subscriber_id=1, writer_id=writer_id)
+        return Subscription.objects.get(subscriber_id=subscriber_id, writer_id=writer_id)
     except Subscription.DoesNotExist:
-        if sub_or_unsub == "sub":
-            return Subscription.objects.create(subscriber_id=1, writer_id=writer_id, is_active=False)
-        else:
-            return None
+        return None
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -78,10 +75,12 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            return Response(error_10003, status=status.HTTP_400_BAD_REQUEST)
-        sb = get_subscription(subscriber_id, pk, "sub")
+            return Response(userDoesNotExist, status=status.HTTP_400_BAD_REQUEST)
+        sb = get_subscription(subscriber_id, pk)
+        if sb is None:
+            Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
         if sb.is_active:  # if True -> error
-            return Response(error_30001, status=status.HTTP_400_BAD_REQUEST)
+            return Response(alreadySubscribed, status=status.HTTP_400_BAD_REQUEST)
         sb.is_active = True
         sb.save()
         return Response(status=status.HTTP_200_OK)
@@ -92,10 +91,10 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            return Response(error_10003, status=status.HTTP_400_BAD_REQUEST)
-        sb = get_subscription(subscriber_id, pk, "unsub")
-        if sb.is_active is False or sb is None:  # if False or None -> error
-            return Response(error_30002, status=status.HTTP_400_BAD_REQUEST)
+            return Response(userDoesNotExist, status=status.HTTP_400_BAD_REQUEST)
+        sb = get_subscription(subscriber_id, pk)
+        if sb is None or sb.is_active is False:  # if False or None -> error
+            return Response(alreadyUnsubscribed, status=status.HTTP_400_BAD_REQUEST)
         sb.is_active = False
         sb.save()
         return Response(status=status.HTTP_200_OK)

@@ -1,57 +1,59 @@
 # 10000 : Users
-error_10001 = {
+from rest_framework.response import Response
+
+invalidFacebookToken = {
     "errorcode": "10001",
     "message": "Invalid facebook token"
 }
-error_10002 = {
+nicknameDuplicate = {
     "errorcode": "10002",
     "message": "Nickname duplicate"
 }
-error_10003 = {
+userDoesNotExist = {
     "errorcode": "10003",
     "message": "User does not exist"
 }
-error_10004 = {
+userNotAuthorized = {
     "errorcode": "10004",
     "message": "User is not authorized"
 }
 
 # 20000 Postings
-error_20001 = {
-    "errorcode": "20001",
-    "message": "-"
-}
-error_20002 = {
+titleDoesNotExist = {
     "errorcode": "20002",
-    "message": "-"
+    "message": "Title does not exist"
 }
-error_20003 = {
+postingDoesNotExist = {
     "errorcode": "20003",
-    "message": "-"
+    "message": "Posting does not exist"
 }
-error_20004 = {
+contentIsEmpty = {
     "errorcode": "20004",
-    "message": "-"
+    "message": "Content is empty"
+}
+titlenameIsEmpty = {
+    "errorcode": "20005",
+    "message": "Title name is empty"
 }
 
 # 30000 Subscriptions
-error_30001 = {
+alreadySubscribed = {
     "errorcode": "30001",
     "message": "User is already subscribed",
 }
 
-error_30002 = {
+alreadyUnsubscribed = {
     "errorcode": "30002",
     "message": "User is not subscribed",
 }
 
 # 40000 Scraps
-error_40001 = {
+alreadyScrapped = {
     "errorcode": "40001",
     "message": "Posting is already scrapped",
 }
 
-error_40002 = {
+alreadyUnscrapped = {
     "errorcode": "40002",
     "message": "Posting is not scrapped",
 }
