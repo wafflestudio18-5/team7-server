@@ -16,7 +16,7 @@ class CustomResponse(Response):
 
 
 class WrittenException(APIException):
-    # custom_exception_handler에서 로직 분기를 위한 클래스
+    # custom_exception_handler에서 로직 분기를 위한 클래
     error_code = 0
     message = ""
 
@@ -44,9 +44,11 @@ def custom_exception_handler(exc, context):
         set_rollback()
         # custom exception 로직
         if isinstance(exc, WrittenException):
-            response = CustomResponse(data, status=exc.status_code, headers=headers, error_code=exc.error_code)
+            response = CustomResponse(data, status=exc.status_code, headers=headers, error_code=exc.error_code,
+                                      message=exc.message)
             response.data['status_code'] = response.status_code
             response.data['errorcode'] = response.error_code
+            response.data['message'] = response.message
             response.data['detail'] = "Written Custom Error"
             return response
         # 이 분기를 타면 기본 django 구현 로직과 같
