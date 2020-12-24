@@ -75,12 +75,12 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            return Response(userDoesNotExist, status=status.HTTP_400_BAD_REQUEST)
+            raise UserDoesNotExist()
         sb = get_subscription(subscriber_id, pk)
         if sb is None:
             Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
         if sb.is_active:  # if True -> error
-            return Response(alreadySubscribed, status=status.HTTP_400_BAD_REQUEST)
+            raise AlreadySubscribed()
         sb.is_active = True
         sb.save()
         return Response(status=status.HTTP_200_OK)
@@ -91,10 +91,10 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            return Response(userDoesNotExist, status=status.HTTP_400_BAD_REQUEST)
+            raise UserDoesNotExist()
         sb = get_subscription(subscriber_id, pk)
         if sb is None or sb.is_active is False:  # if False or None -> error
-            return Response(alreadyUnsubscribed, status=status.HTTP_400_BAD_REQUEST)
+            raise AlreadyUnsubscribed()
         sb.is_active = False
         sb.save()
         return Response(status=status.HTTP_200_OK)
