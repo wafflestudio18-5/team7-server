@@ -20,10 +20,9 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/', include('social.apps.django_app.urls', namespace='social')),
-    #path('', include('user.urls')),
-    #path('', include('posting.urls')),
-    #path('', include('title.urls')),
+    path('', include('user.urls')),
+    path('', include('posting.urls')),
+    path('', include('title.urls')),
 ]
 
 if settings.DEBUG_TOOLBAR:
