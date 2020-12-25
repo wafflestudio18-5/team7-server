@@ -10,8 +10,8 @@ class Posting(models.Model):
     ]
     ALIGNMENTS = (LEFT, CENTER)
 
-    title = models.ForeignKey(Title, related_name="posting_title")
-    writer = models.ForeignKey(User, related_name="posting_writer")
+    title = models.ForeignKey(Title, related_name="postings")
+    writer = models.ForeignKey(User, related_name="postings")
     content = models.TextField()
     alignment = models.CharField(choices=ALIGNMENT_CHOICES, default=LEFT)
     created_at = models.DateTimeField(auto_now_add=True)
