@@ -21,17 +21,6 @@ from rest_framework.decorators import action
 class UserViewSet(viewsets.GenericViewSet):
     # API User===============================================================
     # =======================================================================
-    # POST /users/
-    def create(self, request):
-        return Response(status=status.HTTP_200_OK)
-
-    # PUT /users/login/
-    def login(self, request):
-        return Response(status=status.HTTP_200_OK)
-
-    def logout(self, request):
-        return Response(status=status.HTTP_200_OK)
-
     # GET /users/me/
     @action(detail=False, methods=['GET'], url_path='me')
     def retrieve_me(self, request, pk):
