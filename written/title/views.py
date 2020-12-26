@@ -41,11 +41,6 @@ class TitleViewSet(viewsets.GenericViewSet):
 
         return Response(self.get_serializer(titles, many=True).data)
 
-    # GET /titles/{title_id}/
-    def retrieve(self, request, pk=None):
-        title = self.get_object()
-        return Response(self.get_serializer(title))
-
     # POST /titles/
     def create(self, request):
         if not request.user.is_superuser():
@@ -54,6 +49,11 @@ class TitleViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # GET /titles/{title_id}/
+    def retrieve(self, request, pk=None):
+        title = self.get_object()
+        return Response(self.get_serializer(title))
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):
