@@ -75,12 +75,12 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            raise UserDoesNotExist()
+            raise UserDoesNotExistException()
         sb = get_subscription(subscriber_id, pk)
         if sb is None:
             Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
         if sb.is_active:  # if True -> error
-            raise AlreadySubscribed()
+            raise AlreadySubscribedException()
         sb.is_active = True
         sb.save()
         return Response(status=status.HTTP_200_OK)
@@ -91,10 +91,10 @@ class UserViewSet(viewsets.GenericViewSet):
         subscriber_id = request.user.id
         writer = get_writer(pk)
         if writer is None:
-            raise UserDoesNotExist()
+            raise UserDoesNotExistException()
         sb = get_subscription(subscriber_id, pk)
         if sb is None or sb.is_active is False:  # if False or None -> error
-            raise AlreadyUnsubscribed()
+            raise AlreadyUnsubscribedException()
         sb.is_active = False
         sb.save()
         return Response(status=status.HTTP_200_OK)

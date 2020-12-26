@@ -59,76 +59,76 @@ def custom_exception_handler(exc, context):
 
 
 # 10000 : Users
-class InvalidFacebookToken(WrittenException):
+class InvalidFacebookTokenException(WrittenException):
     status_code = 400
     error_code = 10001
     message = "Invalid facebook token"
 
 
-class NicknameDuplicate(WrittenException):
+class NicknameDuplicateException(WrittenException):
     status_code = 400
     error_code = 10002
     message = "Nickname duplicate"
 
 
-class UserDoesNotExist(WrittenException):
+class UserDoesNotExistException(WrittenException):
     status_code = 400
     error_code = 10003
     message = "User does not exist"
 
 
-class UserNotAuthorized(WrittenException):
+class UserNotAuthorizedException(WrittenException):
     status_code = 400
     error_code = 10004
     message = "User is not authorized"
 
 
 # 20000 Postings
-class TitleDoesNotExist(WrittenException):
+class TitleDoesNotExistException(WrittenException):
     status_code = 400
     error_code = 20002
     message = "Title does not exist"
 
 
-class PostingDoesNotExist(WrittenException):
+class PostingDoesNotExistException(WrittenException):
     status_code = 400
     error_code = 20003
     message = "Posting does not exist"
 
 
-class ContentIsEmpty(WrittenException):
+class ContentIsEmptyException(WrittenException):
     status_code = 400
     error_code = 20004
     message = "Content is empty"
 
 
-class TitleNameIsEmpty(WrittenException):
+class TitleNameIsEmptyException(WrittenException):
     status_code = 400
     error_code = 20005
     message = "Title name is empty"
 
 
 # 30000 Subscriptions
-class AlreadySubscribed(WrittenException):
+class AlreadySubscribedException(WrittenException):
     status_code = 400
     error_code = 30001
     message = "User is already subscribed"
 
 
-class AlreadyUnsubscribed(WrittenException):
+class AlreadyUnsubscribedException(WrittenException):
     status_code = 400
     error_code = 30002
     message = "User is not subscribed"
 
 
 # 40000 Scraps
-class AlreadyScrapped(WrittenException):
+class AlreadyScrappedException(WrittenException):
     status_code = 400
     error_code = 40001
     message = "Posting is already scrapped"
 
 
-class AlreadyUnscrapped(WrittenException):
+class AlreadyUnscrappedException(WrittenException):
     status_code = 400
     error_code = 40002
     message = "Posting is not scrapped"
