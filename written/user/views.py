@@ -43,7 +43,7 @@ class UserViewSet(viewsets.GenericViewSet):
         nickname = data.get("nickname")
         url = f"https://graph.facebook.com/v7.0/me?access_token={access_token}"
         response = requests.get(url)
-        if response.status_code == status.HTTP_400_BAD_REQUEST:
+        if response.status_code != status.HTTP_200_OK:
             return False
         response_data = response.json()
         if response_data["id"] != data.get("facebookid"):

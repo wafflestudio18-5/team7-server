@@ -5,4 +5,5 @@ djangorestframework==3.11.1
 mysqlclient==2.0.1
 pytz==2020.1
 sqlparse==0.3.1
-django-allauth==0.44.0
+social-auth-app-django==4.0.0
+python-social-auth==0.3.6
