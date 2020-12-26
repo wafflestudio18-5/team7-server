@@ -74,12 +74,13 @@ class UserViewSet(viewsets.GenericViewSet):
 
         login(request, user)
         nickname = request.data.get('nickname')
-        UserProfile.objects.create(user=user, nickname=nickname)
+        UserProfile.objects.create(user=user, nickname=nickname, facebook_id=request.data.get('facebookid'))
         data = {'user': serializer.data, 'access_token': user.auth_token.key}
 
         return Response(data, status=status.HTTP_201_CREATED)
 
     # PUT /users/login/
+    @action(detail=False, methods=['PUT'])
     def login(self, request):
         if not self.facebook_login(request.data):
             return Response({"errorcode": "10001", "message": "Invalid facebook token"}, status=status.HTTP_400_BAD_REQUEST)

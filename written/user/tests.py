@@ -93,10 +93,16 @@ class PostUserTestCase(TestCase):
             content_type='application/json'
         )
         data = response.json()
+        id = data["user"]["id"]
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         user_count = User.objects.count()
         self.assertEqual(user_count, 1)
+        userprofile_count = UserProfile.objects.count()
+        self.assertEqual(userprofile_count, 1)
+        user = User.objects.get(id=id)
+        profile = user.userprofile
+        self.assertEqual(profile.facebook_id, "1367486803610262")
 
 
 class PutUserMeTestCase(TestCase):
