@@ -59,4 +59,6 @@ class TitleViewSet(viewsets.GenericViewSet):
     def delete(self, request, pk=None):
         if not request.user.is_superuser():
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        title = self.get_object()
+        title.delete()
         return Response(status=status.HTTP_200_OK)

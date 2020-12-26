@@ -46,3 +46,11 @@ class PostingViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         posting = serializer.save()
         return Response(serializer.data)
+    
+    # DELETE /postings/{posting_id}/
+    def delete(self, request, pk=None):
+        if not request.user.is_superuser():
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        posting = self.get_object()
+        posting.delete()
+        return Response(status=status.HTTP_200_OK)     
