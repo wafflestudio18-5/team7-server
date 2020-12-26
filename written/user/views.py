@@ -26,6 +26,7 @@ from written.error_codes import *
 # GET /users/subscribed/
 # GET /users/subscriber/
 
+
 def get_writer(writer_id):
     try:
         return User.objects.get(pk=writer_id)
@@ -38,6 +39,7 @@ def get_subscription(subscriber_id, writer_id):
         return Subscription.objects.get(subscriber_id=subscriber_id, writer_id=writer_id)
     except Subscription.DoesNotExist:
         return None
+
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
