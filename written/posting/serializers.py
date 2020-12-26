@@ -3,14 +3,14 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from posting import Posting
-from title import Title
+from posting.models import Posting
+from title.models import Title
 
 class PostingSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField()
     content = serializers.CharField(style={'base_template': 'textarea.html'})
-    alignment = serializers.ChoiceField(Posting.ALIGNMENT)
+    alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
     is_public = serializers.BooleanField(default=False)
     
     class Meta:
@@ -25,7 +25,7 @@ class PostingSerializer(serializers.ModelSerializer):
         )
 
     def is_valid(self):
-        if title is None or writer is None content is None:
+        if (title is None) or (writer is None) or (content is None):
             return False
         # TODO... is any other conditions?
         return True

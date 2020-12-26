@@ -2,7 +2,8 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from title import Title
+from title.models import Title
+from title.serializers import TitleSerializer
 import datetime
 
 class TitleViewSet(viewsets.GenericViewSet):
@@ -27,7 +28,7 @@ class TitleViewSet(viewsets.GenericViewSet):
                 startdate = enddate - datetime.timedelta(days=31)
             else:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-            titles = titles.filter(created_at__range=[, now])
+            titles = titles.filter(created_at__range=[startdate, enddate])
         
             
         if is_official.upper() is 'TRUE':

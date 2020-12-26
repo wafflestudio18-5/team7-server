@@ -3,8 +3,8 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from title import Title
-from posting import Posting
+from title.models import Title
+from posting.models import Posting
 
 class TitleSerializer(serializers.ModelSerializer):
     name = serializers.CharField()

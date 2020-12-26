@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from posting.models import Posting
+from posting.serializers import PostingSerializer
 from title.models import Title
 
 # TODO use error code made by shchoi94
