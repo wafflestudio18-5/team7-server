@@ -23,7 +23,13 @@ class PostingSerializer(serializers.ModelSerializer):
             'alignment',
             'is_public',
         )
-    
+
+    def is_valid(self):
+        if title is None or writer is None content is None:
+            return False
+        # TODO... is any other conditions?
+        return True
+
     def get_writer(self, posting):
         return posting.writer
 
