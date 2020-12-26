@@ -12,7 +12,7 @@ class TitleViewSet(viewsets.GenericViewSet):
     def list(self, request):
         time = request.query_param.get('time', None)
         order = request.query_param.get('order', None)
-        is_official = request.query_param.get('official', False)
+        is_official = request.query_param.get('official', None)
         query = request.query_param.get('name', None)
         titles = self.get_queryset()
 
@@ -29,23 +29,34 @@ class TitleViewSet(viewsets.GenericViewSet):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             titles = titles.filter(created_at__range=[, now])
         
-        if is_official is True:
+            
+        if is_official.upper() is 'TRUE':
             titles = titles.filter(official=True)
 
         if query is not None:
             titles = titles.filter(name__contains=query)
+        
+        if order is not None:
+            titles = titles.order_by('created_at')
 
-        #TODO return serializer
-        return Response()
+        return Response(self.get_serializer(titles, many=True).data)
 
     # GET /titles/{title_id}/
     def retrieve(self, request, pk=None):
-        return Response()
+        title = self.get_object()
+        return Response(self.get_serializer(title))
 
-    # POST /titles
+    # POST /titles/
     def create(self, request):
-        return Response(status=status.HTTP_201_CREATED)
+        if not request.user.is_superuser():
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        title = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):
+        if not request.user.is_superuser():
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_200_OK)
