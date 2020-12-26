@@ -28,11 +28,6 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def validate(self, data):
-        nickname = data.get("nickname")
-        if not nickname:
-            raise serializers.ValidationError("Nickname is required")
-        if UserProfile.objects.filter(nickname=nickname).count() != 0:
-            raise serializers.ValidationError("Nickname duplicate")
         return data
 
     def update(self, user, data):

@@ -28,11 +28,12 @@ import requests
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated(), )
 
     def get_permissions(self):
         if self.action in ('create', 'login'):
-            return (AllowAny(),)
-        return super(UserViewSet, self).get_permissions()
+            return (AllowAny(), )
+        return self.permission_classes
 
     # API User===============================================================
     # =======================================================================
@@ -50,9 +51,20 @@ class UserViewSet(viewsets.GenericViewSet):
         data["username"] = response_data.get("name")
         return True
 
+    def check_nickname(self, data):
+        nickname = data.get("nickname")
+        if not nickname:
+            return False
+        if UserProfile.objects.filter(nickname=nickname).count() != 0:
+            return False
+        return True
+
+    # POST /users/
     def create(self, request):
         if not self.facebook_login(request.data):
             return Response({"errorcode": "10001", "message": "Invalid facebook token"}, status=status.HTTP_400_BAD_REQUEST)
+        if not self.check_nickname(request.data):
+            return Response({"errorcode": "10002", "message": "Nickname duplicate"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -67,6 +79,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response(data, status=status.HTTP_201_CREATED)
 
+    # PUT /users/login/
     def login(self, request):
         if not self.facebook_login(request.data):
             return Response({"errorcode": "10001", "message": "Invalid facebook token"}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,7 +89,7 @@ class UserViewSet(viewsets.GenericViewSet):
         data = {'user': self.get_serializer(user).data, 'access_token': token.key}
         return Response(data, status=status.HTTP_200_OK)
 
-    # GET /users/me/     # GET /users/{user_id}/
+    # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):
         user = request.user if pk == 'me' else self.get_object()
         return Response(self.get_serializer(user).data)
@@ -85,12 +98,20 @@ class UserViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         if pk != 'me':
             return Response({"errorcode": "10004", "message": "User is not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
-
         user = request.user
-        data = request.data
-        serializer = self.get_serializer(user, data=data, partial=True)
-        serializer.update(user, serializer.date)
-        return Response(serializer.data)
+        description = request.data.get('description')
+        nickname = request.data.get('nickname')
+        if description:
+            profile = user.userprofile
+            profile.description = description
+            profile.save()
+        if nickname:
+            profile = user.userprofile
+            if nickname != profile.nickname and UserProfile.objects.filter(nickname=nickname).count() != 0:
+                return Response({"errorcode": "10002", "message": "Nickname duplicate"}, status=status.HTTP_400_BAD_REQUEST)
+            profile.nickname = nickname
+            profile.save()
+        return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
 
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
