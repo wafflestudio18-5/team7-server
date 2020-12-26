@@ -9,6 +9,8 @@ from user.models import UserProfile
 from user.serializers import UserSerializer
 from rest_framework.authtoken.models import Token
 import requests
+from subscription.models import Subscription
+from written.error_codes import *
 
 # API User==================================================================
 # POST /users/
@@ -24,6 +26,18 @@ import requests
 # GET /users/subscribed/
 # GET /users/subscriber/
 
+def get_writer(writer_id):
+    try:
+        return User.objects.get(pk=writer_id)
+    except User.DoesNotExist:
+        return None
+
+
+def get_subscription(subscriber_id, writer_id):
+    try:
+        return Subscription.objects.get(subscriber_id=subscriber_id, writer_id=writer_id)
+    except Subscription.DoesNotExist:
+        return None
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -124,11 +138,31 @@ class UserViewSet(viewsets.GenericViewSet):
     # POST /users/{user_id}/subscribe/
     @action(detail=True, methods=['POST'], url_path='subscribe')
     def subscribe(self, request, pk):
+        subscriber_id = request.user.id
+        writer = get_writer(pk)
+        if writer is None:
+            raise UserDoesNotExistException()
+        sb = get_subscription(subscriber_id, pk)
+        if sb is None:
+            Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
+        if sb.is_active:  # if True -> error
+            raise AlreadySubscribedException()
+        sb.is_active = True
+        sb.save()
         return Response(status=status.HTTP_200_OK)
 
     # POST /users/{user_id}/unsubscribe/
     @action(detail=True, methods=['POST'], url_path='unsubscribe')
     def unsubscribe(self, request, pk):
+        subscriber_id = request.user.id
+        writer = get_writer(pk)
+        if writer is None:
+            raise UserDoesNotExistException()
+        sb = get_subscription(subscriber_id, pk)
+        if sb is None or sb.is_active is False:  # if False or None -> error
+            raise AlreadyUnsubscribedException()
+        sb.is_active = False
+        sb.save()
         return Response(status=status.HTTP_200_OK)
 
     # GET /users/subscribed/
