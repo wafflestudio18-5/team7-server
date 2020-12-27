@@ -24,7 +24,7 @@ class PostingSerializer(serializers.ModelSerializer):
             'is_public',
         )
 
-    def is_valid(self):
+    def validate(self):
         if (title is None) or (writer is None) or (content is None):
             return False
         # TODO... is any other conditions?
