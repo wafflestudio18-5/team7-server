@@ -11,6 +11,7 @@ from rest_framework.authtoken.models import Token
 import requests
 from subscription.models import Subscription
 from written.error_codes import *
+from user.token import check_token
 
 # API User==================================================================
 # POST /users/
@@ -54,19 +55,6 @@ class UserViewSet(viewsets.GenericViewSet):
     # API User===============================================================
     # =======================================================================
 
-    def facebook_login(self, data):
-        access_token = data.get('access_token')
-        nickname = data.get("nickname")
-        url = f"https://graph.facebook.com/v7.0/me?access_token={access_token}"
-        response = requests.get(url)
-        if response.status_code != status.HTTP_200_OK:
-            return False
-        response_data = response.json()
-        if response_data["id"] != data.get("facebookid"):
-            return False
-        data["username"] = response_data.get("name")
-        return True
-
     def check_nickname(self, data):
         nickname = data.get("nickname")
         if not nickname:
@@ -77,16 +65,16 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /users/
     def create(self, request):
-        if not self.facebook_login(request.data):
-            return Response({"errorcode": "10001", "message": "Invalid facebook token"}, status=status.HTTP_400_BAD_REQUEST)
+        if not check_token(request.data):
+            raise InvalidFacebookTokenException
         if not self.check_nickname(request.data):
-            return Response({"errorcode": "10002", "message": "Nickname duplicate"}, status=status.HTTP_400_BAD_REQUEST)
+            raise NicknameDuplicateException
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             user = serializer.save()
         except IntegrityError:
-            return Response({"errorcode": "10005", "message": "User already signed up"}, status=status.HTTP_400_BAD_REQUEST)
+            raise UserAlreadySignedUpException
 
         login(request, user)
         nickname = request.data.get('nickname')
@@ -98,8 +86,8 @@ class UserViewSet(viewsets.GenericViewSet):
     # PUT /users/login/
     @action(detail=False, methods=['PUT'])
     def login(self, request):
-        if not self.facebook_login(request.data):
-            return Response({"errorcode": "10001", "message": "Invalid facebook token"}, status=status.HTTP_400_BAD_REQUEST)
+        if not check_token(request.data):
+            raise InvalidFacebookTokenException
         user = User.objects.get(username=request.data.get("username"))
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
@@ -114,7 +102,7 @@ class UserViewSet(viewsets.GenericViewSet):
     # PUT /users/me/
     def update(self, request, pk=None):
         if pk != 'me':
-            return Response({"errorcode": "10004", "message": "User is not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+            raise UserNotAuthorizedException
         user = request.user
         description = request.data.get('description')
         nickname = request.data.get('nickname')
@@ -125,7 +113,7 @@ class UserViewSet(viewsets.GenericViewSet):
         if nickname:
             profile = user.userprofile
             if nickname != profile.nickname and UserProfile.objects.filter(nickname=nickname).count() != 0:
-                return Response({"errorcode": "10002", "message": "Nickname duplicate"}, status=status.HTTP_400_BAD_REQUEST)
+                raise NicknameDuplicateException
             profile.nickname = nickname
             profile.save()
         return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)

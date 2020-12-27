@@ -3,10 +3,12 @@ from django.test import Client, TestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 import json
-
+from unittest.mock import patch
+from user.token import mocked_check_token
 from user.models import UserProfile
 
 
+@patch("user.views.check_token", mocked_check_token)
 class PostUserTestCase(TestCase):
     client = Client()
 
@@ -18,14 +20,14 @@ class PostUserTestCase(TestCase):
             '/users/',
             json.dumps({
                 "facebookid": "1367486803610262",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU1nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "136748680361026",
                 "nickname": "seunghan",
             }),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.json()
-        self.assertEqual(data["errorcode"], "10001")
+        self.assertEqual(data["errorcode"], 10001)
         self.assertEqual(data["message"], "Invalid facebook token")
 
         user_count = User.objects.count()
@@ -35,14 +37,14 @@ class PostUserTestCase(TestCase):
             '/users/',
             json.dumps({
                 "facebookid": "1423",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU1nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "14232",
                 "nickname": "seunghan",
             }),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.json()
-        self.assertEqual(data["errorcode"], "10001")
+        self.assertEqual(data["errorcode"], 10001)
         self.assertEqual(data["message"], "Invalid facebook token")
 
         user_count = User.objects.count()
@@ -53,14 +55,14 @@ class PostUserTestCase(TestCase):
             '/users/',
             json.dumps({
                 "facebookid": "1367486803610262",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU2nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "1367486803610262",
                 "nickname": "",
             }),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.json()
-        self.assertEqual(data["errorcode"], "10002")
+        self.assertEqual(data["errorcode"], 10002)
         self.assertEqual(data["message"], "Nickname duplicate")
 
         user_count = User.objects.count()
@@ -70,13 +72,13 @@ class PostUserTestCase(TestCase):
             '/users/',
             json.dumps({
                 "facebookid": "1367486803610262",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU2nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "1367486803610262",
             }),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.json()
-        self.assertEqual(data["errorcode"], "10002")
+        self.assertEqual(data["errorcode"], 10002)
         self.assertEqual(data["message"], "Nickname duplicate")
 
         user_count = User.objects.count()
@@ -87,7 +89,7 @@ class PostUserTestCase(TestCase):
             '/users/',
             json.dumps({
                 "facebookid": "1367486803610262",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU2nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "1367486803610262",
                 "nickname": "seunghan",
             }),
             content_type='application/json'
@@ -109,12 +111,13 @@ class PutUserMeTestCase(TestCase):
     client = Client()
     token = ""
 
+    @patch("user.views.check_token", mocked_check_token)
     def setUp(self):
         response = self.client.post(
             '/users/',
             json.dumps({
                 "facebookid": "1367486803610262",
-                "access_token": "EAAEZAH2ttWo4BACPWqzJUxIyU2nrfyzv8JiZB7a3HJrDnqWDLRWofodYTN46rRS8PBZB4VxS469JPFTI3lNSXNJkGqA86QeKuZAuyygEfYNaostYWZA39Y8N0lKMrUMj2KKWJe01NbTGjxZB7cllZBg37FEfZBs20kBKDo5P5ozBgAZDZD",
+                "access_token": "1367486803610262",
                 "nickname": "seunghan",
             }),
             content_type='application/json'
