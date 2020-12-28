@@ -37,3 +37,4 @@ class PostingSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
+        

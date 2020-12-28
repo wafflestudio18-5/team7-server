@@ -6,6 +6,13 @@ from title.models import Title
 from title.serializers import TitleSerializer
 import datetime
 
+# API Titles
+# GET /titles/
+# POST /titles/
+# GET /titles/{title_id}/
+# DELETE /titles/{title_id}/
+
+
 class TitleViewSet(viewsets.GenericViewSet):
     queryset = Title.objects.all()
 
@@ -18,10 +25,15 @@ class TitleViewSet(viewsets.GenericViewSet):
         titles = self.get_queryset()
 
         if time is not None:
-            enddate = datetime.date.today()
-            startdate = None
+            if time is not in ['day', 'week', 'month']:
+                raise TitleDoesNotExistException()
+                
+            date_today = datetime.now()
+            month_first_day = date_today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            print(month_first_day)
+
             if time is 'day':
-                startdate = enddate - datetime.timedelta(days=1)
+                startdate = datetime.date.today()
             elif time is 'week':
                 startdate = enddate - datetime.timedelta(days=7)
             elif time is 'month':
@@ -40,12 +52,16 @@ class TitleViewSet(viewsets.GenericViewSet):
         if order is not None:
             titles = titles.order_by('created_at')
 
+        titles = titles.objects.raw(
+            'SELECT * FROM title WHERE EXTRACT(\'year\') FROM '
+            ) #TODO
+
         return Response(self.get_serializer(titles, many=True).data)
 
     # POST /titles/
     def create(self, request):
         if not request.user.is_superuser():
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            raise UserNotAuthorizedException()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
@@ -53,13 +69,15 @@ class TitleViewSet(viewsets.GenericViewSet):
 
     # GET /titles/{title_id}/
     def retrieve(self, request, pk=None):
+        if queryset.filter(pk=pk).exists():
+            raise TitleDoesNotExistException()
         title = self.get_object()
         return Response(self.get_serializer(title))
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):
         if not request.user.is_superuser():
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            raise UserNotAuthorizedException()
         title = self.get_object()
         title.delete()
         return Response(status=status.HTTP_200_OK)
