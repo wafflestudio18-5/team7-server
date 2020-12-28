@@ -26,12 +26,14 @@ class PostingSerializer(serializers.ModelSerializer):
 
     def validate(self):
         if (title is None) or (writer is None) or (content is None):
-            return False
+            raise TitleDoesNotExistException
         # TODO... is any other conditions?
         return True
 
     def get_writer(self, posting):
         return posting.writer
+        # after merge into facebook login/logout, replace it with below
+        # return SmallUserSerializer(posting.writer, context=self.context).data
 
     def get_title(self, posting):
-        return posting.title
+        return posting.title.name

@@ -41,7 +41,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         user = request.user
         data = request.data
         if not data.writer == user:
-            return Response(status=status.HTTP_401_UNAUTHORIZED) 
+            raise UserNotAuthorizedException()
         
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -51,7 +51,9 @@ class PostingViewSet(viewsets.GenericViewSet):
     # DELETE /postings/{posting_id}/
     def delete(self, request, pk=None):
         if not request.user.is_superuser():
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-        posting = self.get_object()
+            raise UserNotAuthorizedException()
+        posting = self.get(pk)
+        if not posting:
+            raise PostingDoesNotExistException()
         posting.delete()
         return Response(status=status.HTTP_200_OK)     
