@@ -48,3 +48,17 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_first_posted_at(self, user):
         return user.userprofile.first_posted_at
+
+
+class SmallUserSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'nickname',
+        )
+
+    def get_nickname(self, user):
+        return user.userprofile.nickname
