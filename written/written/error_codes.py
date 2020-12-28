@@ -73,13 +73,13 @@ class NicknameDuplicateException(WrittenException):
 
 class UserDoesNotExistException(WrittenException):
     status_code = 400
-    error_code = "10003"
+    error_code = 10003
     message = "User does not exist"
 
 
 class UserNotAuthorizedException(WrittenException):
     status_code = 400
-    error_code = "10004"
+    error_code = 10004
     message = "User is not authorized"
 
 

@@ -27,9 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
         return user
 
-    def validate(self, data):
-        return data
-
     def update(self, user, data):
         if data.get('description'):
             profile = user.userprofile
