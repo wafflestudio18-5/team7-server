@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from posting.models import Posting
 from posting.serializers import PostingSerializer
 from title.models import Title
+from written.error_codes import *
 
 # TODO use error code made by shchoi94
 class PostingViewSet(viewsets.GenericViewSet):
@@ -32,7 +33,9 @@ class PostingViewSet(viewsets.GenericViewSet):
         
     # GET /postings/{posting_id}/
     def retrieve(self, request, pk=None):
-        posting = self.get_object()
+        posting = self.get(pk=pk)
+        if not posting:
+            raise PostingDoesNotExistException()
         serializer = self.get_serializer(posting)
         return Response(serializer.data)
 
