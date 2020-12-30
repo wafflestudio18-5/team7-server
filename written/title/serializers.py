@@ -20,3 +20,4 @@ class TitleSerializer(serializers.ModelSerializer):
     
     def get_postings(self, title):
         return title.postings.all()
+

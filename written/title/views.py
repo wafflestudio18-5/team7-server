@@ -20,7 +20,7 @@ class TitleViewSet(viewsets.GenericViewSet):
     def list(self, request):
         time = request.query_param.get('time', None)
         order = request.query_param.get('order', None)
-        is_official = request.query_param.get('official', None)
+        official = request.query_param.get('official', None)
         query = request.query_param.get('name', None)
         titles = self.get_queryset()
 
@@ -43,7 +43,7 @@ class TitleViewSet(viewsets.GenericViewSet):
             titles = titles.filter(created_at__range=[startdate, enddate])
         
             
-        if is_official.upper() is 'TRUE':
+        if official.upper() is 'TRUE':
             titles = titles.filter(official=True)
 
         if query is not None:
@@ -53,7 +53,10 @@ class TitleViewSet(viewsets.GenericViewSet):
             titles = titles.order_by('created_at')
 
         titles = titles.objects.raw(
-            'SELECT * FROM title WHERE EXTRACT(\'year\') FROM '
+            '''SELECT * FROM title 
+               WHERE created_at BETWEEN startdate AND enddate 
+                 AND is_official == official
+                 AND '''
             ) #TODO
 
         return Response(self.get_serializer(titles, many=True).data)
