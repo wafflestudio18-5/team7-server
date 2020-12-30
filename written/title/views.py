@@ -4,7 +4,8 @@ from rest_framework.response import Response
 
 from title.models import Title
 from title.serializers import TitleSerializer
-import datetime
+from django.utils import timezone
+from written.error_codes import *
 
 # API Titles
 # GET /titles/
@@ -15,56 +16,53 @@ import datetime
 
 class TitleViewSet(viewsets.GenericViewSet):
     queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    
+    def get_serializer_class(self):
+        return self.serializer_class
 
     # GET /titles/
     def list(self, request):
-        time = request.query_param.get('time', None)
-        order = request.query_param.get('order', None)
-        official = request.query_param.get('official', None)
-        query = request.query_param.get('name', None)
+        time = request.query_params.get('time', 'all')
+        order = request.query_params.get('order', 'recent')
+        official = request.query_params.get('official', False)
+        query = request.query_params.get('query', None)
         titles = self.get_queryset()
 
-        if time is not None:
-            if time is not in ['day', 'week', 'month']:
+        if time != 'all':
+            if time not in ['day', 'week', 'month']:
                 raise TitleDoesNotExistException()
                 
-            date_today = datetime.now()
-            month_first_day = date_today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            print(month_first_day)
-
-            if time is 'day':
-                startdate = datetime.date.today()
-            elif time is 'week':
-                startdate = enddate - datetime.timedelta(days=7)
-            elif time is 'month':
-                startdate = enddate - datetime.timedelta(days=31)
+            date_now = timezone.now()
+            startdate = date_now
+            enddate = date_now
+            if time == 'day':
+                startdate = enddate - timezone.timedelta(days=1)
+            elif time == 'week':
+                startdate = enddate - timezone.timedelta(weeks=1)
+            elif time == 'month':
+                startdate = enddate - timezone.timedelta(days=30)
             else:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+                raise TitleDoesNotExistException()
             titles = titles.filter(created_at__range=[startdate, enddate])
         
             
-        if official.upper() is 'TRUE':
-            titles = titles.filter(official=True)
+        if official.lower() == 'true':
+            titles = titles.filter(is_official=True)
 
         if query is not None:
             titles = titles.filter(name__contains=query)
         
-        if order is not None:
+        if order == 'recent':
             titles = titles.order_by('created_at')
-
-        titles = titles.objects.raw(
-            '''SELECT * FROM title 
-               WHERE created_at BETWEEN startdate AND enddate 
-                 AND is_official == official
-                 AND '''
-            ) #TODO
+        else:
+            titles = titles.order_by('-created_at')
 
         return Response(self.get_serializer(titles, many=True).data)
 
     # POST /titles/
     def create(self, request):
-        if not request.user.is_superuser():
-            raise UserNotAuthorizedException()
+        data = request.data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
@@ -72,15 +70,17 @@ class TitleViewSet(viewsets.GenericViewSet):
 
     # GET /titles/{title_id}/
     def retrieve(self, request, pk=None):
-        if queryset.filter(pk=pk).exists():
+        title = Title.objects.get(pk=pk)
+        if not title:
             raise TitleDoesNotExistException()
-        title = self.get_object()
-        return Response(self.get_serializer(title))
+        return Response(self.get_serializer(title).data)
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):
         if not request.user.is_superuser():
             raise UserNotAuthorizedException()
+        if not queryset.filter(pk=pk).exists():
+            raise TitleDoesNotExistException()
         title = self.get_object()
         title.delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response()
