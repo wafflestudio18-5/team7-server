@@ -54,9 +54,11 @@ class TitleViewSet(viewsets.GenericViewSet):
             titles = titles.filter(name__contains=query)
         
         if order == 'recent':
+            titles = titles.order_by('-created_at')
+        elif order == 'oldest':
             titles = titles.order_by('created_at')
         else:
-            titles = titles.order_by('-created_at')
+            raise TitleDoesNotExistException()
 
         return Response(self.get_serializer(titles, many=True).data)
 
@@ -74,6 +76,18 @@ class TitleViewSet(viewsets.GenericViewSet):
         if not title:
             raise TitleDoesNotExistException()
         return Response(self.get_serializer(title).data)
+
+    # PUT /titles/{title_id}/
+    def update(self, request, pk=None):
+        title = Title.objects.get(pk=pk)
+        if not title:
+            raise TitleDoesNotExistException()
+        is_official = request.data['is_official']
+        if not is_official:
+            raise TitleDoesNotExistException()
+        title.is_official = is_official
+        title.save()
+        return Response()
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):
