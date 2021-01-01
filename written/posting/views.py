@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from posting.models import Posting
-from posting.serializers import PostingSerializer
+from posting.serializers import PostingSerializer, PostingCreationSerializer
 from title.models import Title
 from written.error_codes import *
 
@@ -12,6 +12,13 @@ from written.error_codes import *
 class PostingViewSet(viewsets.GenericViewSet):
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
+
+    def get_serializer_class(self):
+        print("self action is ")
+        print(self.action)
+        if self.action in ('create'):
+            return PostingCreationSerializer
+        return self.serializer_class
 
     # TODO? permission_classes = (IsAuthenticated, )
     # TODO? get_permissions(self):
@@ -25,7 +32,9 @@ class PostingViewSet(viewsets.GenericViewSet):
     # POST /postings/
     def create(self, request):
         user = request.user
-        data = request.data
+        data = request.data 
+        print("create view request data: ") #erase
+        
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         posting = serializer.save()
@@ -33,7 +42,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         
     # GET /postings/{posting_id}/
     def retrieve(self, request, pk=None):
-        posting = self.get(pk=pk)
+        posting = Posting.objects.get(pk=pk)
         if not posting:
             raise PostingDoesNotExistException()
         serializer = self.get_serializer(posting)
@@ -55,7 +64,7 @@ class PostingViewSet(viewsets.GenericViewSet):
     def delete(self, request, pk=None):
         if not request.user.is_superuser():
             raise UserNotAuthorizedException()
-        posting = self.get(pk)
+        posting = Posting.objects.get(pk=pk)
         if not posting:
             raise PostingDoesNotExistException()
         posting.delete()
