@@ -27,15 +27,12 @@ class PostingSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        print("validate starts")
-        # title = Title.objects.get(name=data.title)
         if data.get('title') is None: 
             raise TitleDoesNotExistException
         if data.get('content') is None:
             raise ContentIsEmptyException
         data_copy = data
         data_copy['title'] = Title.objects.get(name=data['title'])
-        print(data_copy)
         return data_copy
 
     def create(self, validated_data):
@@ -48,7 +45,7 @@ class PostingSerializer(serializers.ModelSerializer):
         # return SmallUserSerializer(posting.writer, context=self.context).data
 
     def get_title(self, posting):
-        return posting.title
+        return posting.title.name
         
 
 class PostingCreationSerializer(serializers.ModelSerializer):

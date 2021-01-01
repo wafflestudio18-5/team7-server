@@ -33,12 +33,14 @@ class PostingViewSet(viewsets.GenericViewSet):
     def create(self, request):
         user = request.user
         data = request.data 
-        print("create view request data: ") #erase
-        
+        titlename = data.get('title')
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         posting = serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data_to_show = serializer.data
+        data_to_show['title'] = titlename
+        return Response(data_to_show, status=status.HTTP_201_CREATED)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
         
     # GET /postings/{posting_id}/
     def retrieve(self, request, pk=None):
