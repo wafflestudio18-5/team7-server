@@ -25,7 +25,7 @@ class TitleViewSet(viewsets.GenericViewSet):
     def list(self, request):
         time = request.query_params.get('time', 'all')
         order = request.query_params.get('order', 'recent')
-        official = request.query_params.get('official', False)
+        official = request.query_params.get('official', 'false')
         query = request.query_params.get('query', None)
         titles = self.get_queryset()
 

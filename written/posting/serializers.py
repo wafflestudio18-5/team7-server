@@ -5,7 +5,6 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from posting.models import Posting
 from title.models import Title
-from title.serializers import TitleSerializer
 from written.error_codes import *
 
 class PostingSerializer(serializers.ModelSerializer):
@@ -47,7 +46,7 @@ class PostingSerializer(serializers.ModelSerializer):
         # return SmallUserSerializer(posting.writer, context=self.context).data
 
     def get_title(self, posting):
-        return TitleSerializer(posting.title, context=self.context)
+        return posting.title.name
         
 
 class PostingRetrieveSerializer(serializers.ModelSerializer):

@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from title.models import Title
 from posting.models import Posting
+from posting.serializers import PostingRetrieveSerializer
 from written.error_codes import *
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -29,5 +30,6 @@ class TitleSerializer(serializers.ModelSerializer):
         return data
 
     def get_postings(self, title):
-        return title.postings.all()
+        postings = title.postings.all()
+        return PostingRetrieveSerializer(postings, many=True).data
 
