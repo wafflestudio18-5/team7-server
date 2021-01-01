@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from posting.models import Posting
 from title.models import Title
+from title.serializers import TitleSerializer
 from written.error_codes import *
 
 class PostingSerializer(serializers.ModelSerializer):
@@ -32,6 +33,7 @@ class PostingSerializer(serializers.ModelSerializer):
         if data.get('content') is None:
             raise ContentIsEmptyException
         data_copy = data
+        title = Title.objects.get(name=data['title'])
         data_copy['title'] = Title.objects.get(name=data['title'])
         return data_copy
 
@@ -45,11 +47,11 @@ class PostingSerializer(serializers.ModelSerializer):
         # return SmallUserSerializer(posting.writer, context=self.context).data
 
     def get_title(self, posting):
-        return posting.title.name
+        return TitleSerializer(posting.title, context=self.context)
         
 
-class PostingCreationSerializer(serializers.ModelSerializer):
-    # title = serializers.CharField()
+class PostingRetrieveSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField()
     content = serializers.CharField(style={'base_template': 'textarea.html'})
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
@@ -65,17 +67,6 @@ class PostingCreationSerializer(serializers.ModelSerializer):
             'alignment',
             'is_public',
         )
-
-    def validate(self, data):
-        print("Creation Serializer") #erase
-        # if data.get('title') is None: 
-        #     raise ContentIsEmptyException
-        if data.content is None:
-            raise ContentIsEmptyException
-        # if data.writer is None: 
-        #     raise ContentIsEmptyException
-
-        return True
 
     def get_writer(self, posting):
         return posting.writer

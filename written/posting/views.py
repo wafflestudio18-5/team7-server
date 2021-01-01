@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from posting.models import Posting
-from posting.serializers import PostingSerializer
+from posting.serializers import PostingSerializer, PostingRetrieveSerializer
 from title.models import Title
 from written.error_codes import *
 
@@ -42,11 +42,8 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting = Posting.objects.get(pk=pk)
         if not posting:
             raise PostingDoesNotExistException()
-        serializer = self.get_serializer(posting)
-        serializer.is_valid(raise_exception=True)
-        data_to_show = serializer.data
-        data_to_show['title'] = titlename
-        return Response(data_to_show)
+        serializer = PostingRetrieveSerializer(posting)
+        return Response(serializer.data)
 
     # PUT /postings/{posting_id}/
     def update(self, request, pk=None):
