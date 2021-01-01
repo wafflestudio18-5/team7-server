@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from posting.models import Posting
-from posting.serializers import PostingSerializer, PostingCreationSerializer
+from posting.serializers import PostingSerializer
 from title.models import Title
 from written.error_codes import *
 
@@ -14,10 +14,6 @@ class PostingViewSet(viewsets.GenericViewSet):
     serializer_class = PostingSerializer
 
     def get_serializer_class(self):
-        print("self action is ")
-        print(self.action)
-        if self.action in ('create'):
-            return PostingCreationSerializer
         return self.serializer_class
 
     # TODO? permission_classes = (IsAuthenticated, )
@@ -40,7 +36,6 @@ class PostingViewSet(viewsets.GenericViewSet):
         data_to_show = serializer.data
         data_to_show['title'] = titlename
         return Response(data_to_show, status=status.HTTP_201_CREATED)
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
         
     # GET /postings/{posting_id}/
     def retrieve(self, request, pk=None):
@@ -48,7 +43,10 @@ class PostingViewSet(viewsets.GenericViewSet):
         if not posting:
             raise PostingDoesNotExistException()
         serializer = self.get_serializer(posting)
-        return Response(serializer.data)
+        serializer.is_valid(raise_exception=True)
+        data_to_show = serializer.data
+        data_to_show['title'] = titlename
+        return Response(data_to_show)
 
     # PUT /postings/{posting_id}/
     def update(self, request, pk=None):
@@ -60,7 +58,9 @@ class PostingViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         posting = serializer.save()
-        return Response(serializer.data)
+        data_to_show = serializer.data
+        data_to_show['title'] = titlename
+        return Response(data_to_show)
     
     # DELETE /postings/{posting_id}/
     def delete(self, request, pk=None):
