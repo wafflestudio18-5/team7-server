@@ -1,11 +1,17 @@
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.db import IntegrityError
+from user.models import UserProfile
+from user.serializers import UserSerializer
+from rest_framework.authtoken.models import Token
+import requests
 from subscription.models import Subscription
 from written.error_codes import *
-
+from user.token import check_token
 
 # API User==================================================================
 # POST /users/
@@ -20,6 +26,7 @@ from written.error_codes import *
 # POST /users/{user_id}/unsubscribe/
 # GET /users/subscribed/
 # GET /users/subscriber/
+
 
 def get_writer(writer_id):
     try:
@@ -36,31 +43,80 @@ def get_subscription(subscriber_id, writer_id):
 
 
 class UserViewSet(viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated(), )
+
+    def get_permissions(self):
+        if self.action in ('create', 'login'):
+            return (AllowAny(), )
+        return self.permission_classes
+
     # API User===============================================================
     # =======================================================================
+
+    def check_nickname(self, data):
+        nickname = data.get("nickname")
+        if not nickname:
+            return False
+        if UserProfile.objects.filter(nickname=nickname).count() != 0:
+            return False
+        return True
+
     # POST /users/
     def create(self, request):
-        return Response(status=status.HTTP_200_OK)
+        if not check_token(request.data):
+            raise InvalidFacebookTokenException
+        if not self.check_nickname(request.data):
+            raise NicknameDuplicateException
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = serializer.save()
+        except IntegrityError:
+            raise UserAlreadySignedUpException
+
+        login(request, user)
+        nickname = request.data.get('nickname')
+        UserProfile.objects.create(user=user, nickname=nickname, facebook_id=request.data.get('facebookid'))
+        data = {'user': serializer.data, 'access_token': user.auth_token.key}
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
     # PUT /users/login/
+    @action(detail=False, methods=['PUT'])
     def login(self, request):
-        return Response(status=status.HTTP_200_OK)
+        if not check_token(request.data):
+            raise InvalidFacebookTokenException
+        user = User.objects.get(username=request.data.get("username"))
+        login(request, user)
+        token, created = Token.objects.get_or_create(user=user)
+        data = {'user': self.get_serializer(user).data, 'access_token': token.key}
+        return Response(data, status=status.HTTP_200_OK)
 
-    def logout(self, request):
-        return Response(status=status.HTTP_200_OK)
-
-    # GET /users/me/
-    @action(detail=False, methods=['GET'], url_path='me')
-    def retrieve_me(self, request, pk):
-        return Response(status=status.HTTP_200_OK)
-
-    # GET /users/{user_id}/
-    def retrieve(self, request, pk):
-        return Response(status=status.HTTP_200_OK)
+    # GET /users/me/  GET /users/{user_id}/
+    def retrieve(self, request, pk=None):
+        user = request.user if pk == 'me' else self.get_object()
+        return Response(self.get_serializer(user).data)
 
     # PUT /users/me/
-    def update(self, request):
-        return Response(status=status.HTTP_200_OK)
+    def update(self, request, pk=None):
+        if pk != 'me':
+            raise UserNotAuthorizedException
+        user = request.user
+        description = request.data.get('description')
+        nickname = request.data.get('nickname')
+        if description:
+            profile = user.userprofile
+            profile.description = description
+            profile.save()
+        if nickname:
+            profile = user.userprofile
+            if nickname != profile.nickname and UserProfile.objects.filter(nickname=nickname).count() != 0:
+                raise NicknameDuplicateException
+            profile.nickname = nickname
+            profile.save()
+        return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
 
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
