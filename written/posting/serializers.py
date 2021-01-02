@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from posting.models import Posting
 from title.models import Title
 from written.error_codes import *
+from user.serializers import SmallUserSerializer
 
 class PostingSerializer(serializers.ModelSerializer):
     # title = serializers.SerializerMethodField()
@@ -41,9 +42,8 @@ class PostingSerializer(serializers.ModelSerializer):
         return posting
 
     def get_writer(self, posting):
-        return posting.writer
-        # after merge into facebook login/logout, replace it with below
-        # return SmallUserSerializer(posting.writer, context=self.context).data
+        writer = posting.writer
+        return SmallUserSerializer(writer, context=self.context).data
 
     def get_title(self, posting):
         return posting.title.name
@@ -68,9 +68,8 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
         )
 
     def get_writer(self, posting):
-        return posting.writer
-        # after merge into facebook login/logout, replace it with below
-        # return SmallUserSerializer(posting.writer, context=self.context).data
+        writer = posting.writer
+        return SmallUserSerializer(writer, context=self.context).data
 
     def get_title(self, posting):
         return posting.title.name
@@ -96,9 +95,8 @@ class PostingUpdateSerializer(serializers.ModelSerializer):
     #     return data
 
     def get_writer(self, posting):
-        return posting.writer
-        # after merge into facebook login/logout, replace it with below
-        # return SmallUserSerializer(posting.writer, context=self.context).data
+        writer = posting.writer
+        return SmallUserSerializer(writer, context=self.context).data
 
     def get_title(self, posting):
         return posting.title.name

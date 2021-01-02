@@ -13,6 +13,11 @@ from written.error_codes import *
 # GET /titles/{title_id}/
 # DELETE /titles/{title_id}/
 
+def get_title(title_id):
+    try:
+        return Title.objects.get(pk=title_id)
+    except Title.DoesNotExist:
+        return None
 
 class TitleViewSet(viewsets.GenericViewSet):
     queryset = Title.objects.all()
@@ -72,29 +77,30 @@ class TitleViewSet(viewsets.GenericViewSet):
 
     # GET /titles/{title_id}/
     def retrieve(self, request, pk=None):
-        title = Title.objects.get(pk=pk)
+        title = get_title(pk)
         if not title:
             raise TitleDoesNotExistException()
         return Response(self.get_serializer(title).data)
 
-    # PUT /titles/{title_id}/
-    def update(self, request, pk=None):
-        title = Title.objects.get(pk=pk)
-        if not request.user.is_superuser():
-            raise UserNotAuthorizedException()
-        if not title:
-            raise TitleDoesNotExistException()
-        serializer = TitleUpdateSerializer(title, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.update(title, serializer.validated_data)
-        return Response(self.get_serializer(title).data)
+    # deprecated
+    # # PUT /titles/{title_id}/
+    # def update(self, request, pk=None):
+    #     title = get_title(pk)
+    #     if not request.user.is_superuser:
+    #         raise UserNotAuthorizedException()
+    #     if not title:
+    #         raise TitleDoesNotExistException()
+    #     serializer = TitleUpdateSerializer(title, data=request.data, partial=True)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.update(title, serializer.validated_data)
+    #     return Response(self.get_serializer(title).data)
 
-    # DELETE /titles/{title_id}/
-    def delete(self, request, pk=None):
-        if not request.user.is_superuser():
-            raise UserNotAuthorizedException()
-        if not queryset.filter(pk=pk).exists():
-            raise TitleDoesNotExistException()
-        title = self.get_object()
-        title.delete()
-        return Response()
+    # # DELETE /titles/{title_id}/
+    # def delete(self, request, pk=None):
+    #     if not request.user.is_superuser:
+    #         raise UserNotAuthorizedException()
+    #     title = get_title(pk)
+    #     if not title:
+    #         raise TitleDoesNotExistException()
+    #     title.delete()
+    #     return Response()

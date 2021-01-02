@@ -8,7 +8,12 @@ from posting.serializers import PostingSerializer, PostingRetrieveSerializer, Po
 from title.models import Title
 from written.error_codes import *
 
-# TODO use error code made by shchoi94
+def get_posting(posting_id):
+    try:
+        return Posting.objects.get(pk=posting_id)
+    except Posting.DoesNotExist:
+        return None
+
 class PostingViewSet(viewsets.GenericViewSet):
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
@@ -32,14 +37,14 @@ class PostingViewSet(viewsets.GenericViewSet):
         titlename = data.get('title')
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        posting = serializer.save()
+        posting = serializer.save(writer=user)
         data_to_show = serializer.data
         data_to_show['title'] = titlename
         return Response(data_to_show, status=status.HTTP_201_CREATED)
         
     # GET /postings/{posting_id}/
     def retrieve(self, request, pk=None):
-        posting = Posting.objects.get(pk=pk)
+        posting = get_posting(pk)
         if not posting:
             raise PostingDoesNotExistException()
         serializer = PostingRetrieveSerializer(posting)
@@ -49,9 +54,10 @@ class PostingViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         user = request.user
         data = request.data
-        posting = Posting.objects.get(pk=pk)
-        # if not data.writer == user:
-        #     raise UserNotAuthorizedException()
+        posting = get_posting(pk)
+
+        if posting.writer != user:
+            raise UserNotAuthorizedException()
         
         serializer = PostingUpdateSerializer(posting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -62,10 +68,10 @@ class PostingViewSet(viewsets.GenericViewSet):
     
     # DELETE /postings/{posting_id}/
     def delete(self, request, pk=None):
-        if not request.user.is_superuser():
-            raise UserNotAuthorizedException()
-        posting = Posting.objects.get(pk=pk)
+        posting = get_posting(pk)
         if not posting:
             raise PostingDoesNotExistException()
+        if request.user != posting.writer:
+            raise UserNotAuthorizedException()
         posting.delete()
         return Response(status=status.HTTP_200_OK)     
