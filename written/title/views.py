@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from title.models import Title
-from title.serializers import TitleSerializer
+from title.serializers import TitleSerializer, TitleUpdateSerializer
 from django.utils import timezone
 from written.error_codes import *
 
@@ -80,14 +80,14 @@ class TitleViewSet(viewsets.GenericViewSet):
     # PUT /titles/{title_id}/
     def update(self, request, pk=None):
         title = Title.objects.get(pk=pk)
+        if not request.user.is_superuser():
+            raise UserNotAuthorizedException()
         if not title:
             raise TitleDoesNotExistException()
-        is_official = request.data['is_official']
-        if not is_official:
-            raise TitleDoesNotExistException()
-        title.is_official = is_official
-        title.save()
-        return Response()
+        serializer = TitleUpdateSerializer(title, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(title, serializer.validated_data)
+        return Response(self.get_serializer(title).data)
 
     # DELETE /titles/{title_id}/
     def delete(self, request, pk=None):

@@ -11,12 +11,13 @@ from written.error_codes import *
 class TitleSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     postings = serializers.SerializerMethodField()
-
+    is_official = serializers.BooleanField(default=False)
     class Meta:
         model = Title
         fields = (
             'id',
             'name',
+            'is_official',
             'postings',
         )
     def validate(self, data):
@@ -33,3 +34,19 @@ class TitleSerializer(serializers.ModelSerializer):
         postings = title.postings.all()
         return PostingRetrieveSerializer(postings, many=True).data
 
+class TitleUpdateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    postings = serializers.SerializerMethodField()
+    is_official = serializers.BooleanField()
+    class Meta:
+        model = Title
+        fields = (
+            'id',
+            'name',
+            'is_official',
+            'postings',
+        )
+
+    def get_postings(self, title):
+        postings = title.postings.all()
+        return PostingRetrieveSerializer(postings, many=True).data

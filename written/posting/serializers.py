@@ -74,3 +74,31 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
+
+class PostingUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+    writer = serializers.SerializerMethodField(allow_null=True)
+    content = serializers.CharField(style={'base_template': 'textarea.html'}, allow_null=True)
+    alignment = serializers.ChoiceField(Posting.ALIGNMENTS, allow_null=True)
+    is_public = serializers.BooleanField(default=False, allow_null=True)
+    
+    class Meta:
+        model = Posting
+        fields = (
+            'id',
+            'title',
+            'writer',
+            'content',
+            'alignment',
+            'is_public',
+        )
+            
+    #     return data
+
+    def get_writer(self, posting):
+        return posting.writer
+        # after merge into facebook login/logout, replace it with below
+        # return SmallUserSerializer(posting.writer, context=self.context).data
+
+    def get_title(self, posting):
+        return posting.title.name

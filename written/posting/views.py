@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from posting.models import Posting
-from posting.serializers import PostingSerializer, PostingRetrieveSerializer
+from posting.serializers import PostingSerializer, PostingRetrieveSerializer, PostingUpdateSerializer
 from title.models import Title
 from written.error_codes import *
 
@@ -49,14 +49,15 @@ class PostingViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         user = request.user
         data = request.data
-        if not data.writer == user:
-            raise UserNotAuthorizedException()
+        posting = Posting.objects.get(pk=pk)
+        # if not data.writer == user:
+        #     raise UserNotAuthorizedException()
         
-        serializer = self.get_serializer(data=request.data)
+        serializer = PostingUpdateSerializer(posting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        posting = serializer.save()
+        serializer.update(posting, serializer.validated_data)
         data_to_show = serializer.data
-        data_to_show['title'] = titlename
+        data_to_show['title'] = posting.title.name
         return Response(data_to_show)
     
     # DELETE /postings/{posting_id}/
