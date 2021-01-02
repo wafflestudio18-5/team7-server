@@ -85,11 +85,11 @@ WSGI_APPLICATION = 'written.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': '127.0.0.1',
-        'PORT': 3306,
-        'NAME': 'written_waffle',
-        'USER': 'written-waffle',
-        'PASSWORD': 'toyproject'
+        'HOST': os.environ['WRITTEN_HOST'] or '127.0.0.1',
+        'PORT': os.environ['WRITTEN_PORT'] or '3306',
+        'NAME': os.environ['WRITTEN_NAME'] or 'written_waffle',
+        'USER': os.environ['WRITTEN_USER'] or 'written-waffle',
+        'PASSWORD': os.environ['WRITTEN_PASSWORD'] or 'toyproject'
     }
 }
 
