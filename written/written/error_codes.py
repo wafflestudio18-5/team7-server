@@ -83,6 +83,12 @@ class UserNotAuthorizedException(WrittenException):
     message = "User is not authorized"
 
 
+class UserAlreadySignedUpException(WrittenException):
+    status_code = 400
+    error_code = 10005
+    message = "User already signed up"
+
+
 # 20000 Postings
 class TitleDoesNotExistException(WrittenException):
     status_code = 400
