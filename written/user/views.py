@@ -158,7 +158,11 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/subscribed/
     # list of writers
     @action(detail=False, methods=['GET'], url_path='subscribed')
-    def list_of_subscribed(self):
+    def list_of_subscribed(self,request):
+        subscriber_id = request.user.id
+        writers = Subscription.objects.raw('''SELECT updated_at FROM subscription_subscription WHERE subscriber_id = ORDER BY id DESC LIMIT 10''')
+        result = []
+
         return Response(status=status.HTTP_200_OK)
 
     # GET /users/subscriber/
