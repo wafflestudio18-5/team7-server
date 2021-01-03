@@ -12,6 +12,8 @@ import requests
 from subscription.models import Subscription
 from written.error_codes import *
 from user.token import check_token
+from django.db import connection
+
 
 # API User==================================================================
 # POST /users/
@@ -26,6 +28,14 @@ from user.token import check_token
 # POST /users/{user_id}/unsubscribe/
 # GET /users/subscribed/
 # GET /users/subscriber/
+
+def dict_fetch_all(cursor):
+    # Return all rows from a cursor as a dict
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
 
 
 def get_writer(writer_id):
@@ -66,15 +76,15 @@ class UserViewSet(viewsets.GenericViewSet):
     # POST /users/
     def create(self, request):
         if not check_token(request.data):
-            raise InvalidFacebookTokenException
+            raise InvalidFacebookTokenException()
         if not self.check_nickname(request.data):
-            raise NicknameDuplicateException
+            raise NicknameDuplicateException()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             user = serializer.save()
         except IntegrityError:
-            raise UserAlreadySignedUpException
+            raise UserAlreadySignedUpException()
 
         login(request, user)
         nickname = request.data.get('nickname')
@@ -87,7 +97,7 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['PUT'])
     def login(self, request):
         if not check_token(request.data):
-            raise InvalidFacebookTokenException
+            raise InvalidFacebookTokenException()
         user = User.objects.get(username=request.data.get("username"))
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
@@ -102,7 +112,7 @@ class UserViewSet(viewsets.GenericViewSet):
     # PUT /users/me/
     def update(self, request, pk=None):
         if pk != 'me':
-            raise UserNotAuthorizedException
+            raise UserNotAuthorizedException()
         user = request.user
         description = request.data.get('description')
         nickname = request.data.get('nickname')
@@ -113,7 +123,7 @@ class UserViewSet(viewsets.GenericViewSet):
         if nickname:
             profile = user.userprofile
             if nickname != profile.nickname and UserProfile.objects.filter(nickname=nickname).count() != 0:
-                raise NicknameDuplicateException
+                raise NicknameDuplicateException()
             profile.nickname = nickname
             profile.save()
         return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
@@ -158,15 +168,85 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/subscribed/
     # list of writers
     @action(detail=False, methods=['GET'], url_path='subscribed')
-    def list_of_subscribed(self,request):
-        subscriber_id = request.user.id
-        writers = Subscription.objects.raw('''SELECT updated_at FROM subscription_subscription WHERE subscriber_id = ORDER BY id DESC LIMIT 10''')
-        result = []
+    def list_of_subscribed(self, request):
+        # INIT VARIABLES
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else Subscription.objects.last().id + 1
+        page_size = int(request.query_params.get('page_size'))
+        user_id = request.user.id
+        # user_id = 1
 
-        return Response(status=status.HTTP_200_OK)
+        # PAGINATION QUERY
+        my_query = '''
+            SELECT user_table.id, user_table.username,subs_table.id as 'cursor'
+            FROM auth_user AS user_table
+            JOIN (SELECT * FROM subscription_subscription WHERE id < %s AND subscriber_id = %s) AS subs_table
+            WHERE writer_id=user_table.id
+            ORDER BY subs_table.id DESC
+            LIMIT %s;
+            '''
+        with connection.cursor() as cursor:
+            cursor.execute(my_query, [my_cursor, user_id, page_size])
+            rows = dict_fetch_all(cursor)
+
+        # SET RETURN VALUE: 'cursor'
+        if len(rows) > 0:
+            result_cursor = rows[-1]['cursor']
+        else:
+            result_cursor = my_cursor
+
+        # SET RETURN VALUE: 'has_next'
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM subscription_subscription WHERE id < %s AND subscriber_id = %s",
+                                     [result_cursor, user_id])
+            next_rows = dict_fetch_all(cursor)
+        if len(next_rows) > 0:
+            has_next = True
+        else:
+            has_next = False
+
+        data = {'writers': rows, 'has_next': has_next, 'cursor': result_cursor}
+        return Response(data, status=status.HTTP_200_OK)
 
     # GET /users/subscriber/
     # list of subscribers
     @action(detail=False, methods=['GET'], url_path='subscriber')
-    def list_of_subscriber(self):
-        return Response(status=status.HTTP_200_OK)
+    def list_of_subscriber(self, request):
+        # INIT VARIABLES
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else Subscription.objects.last().id + 1
+        page_size = int(request.query_params.get('page_size'))
+        user_id = request.user.id
+        # user_id = 1
+
+        # PAGINATION QUERY
+        my_query = '''
+                    SELECT user_table.id, user_table.username,subs_table.id as 'cursor'
+                    FROM auth_user AS user_table
+                    JOIN (SELECT * FROM subscription_subscription WHERE id < %s AND writer_id = %s) AS subs_table
+                    WHERE subscriber_id=user_table.id
+                    ORDER BY subs_table.id DESC
+                    LIMIT %s;
+                    '''
+        with connection.cursor() as cursor:
+            cursor.execute(my_query, [my_cursor, user_id, page_size])
+            rows = dict_fetch_all(cursor)
+
+        # SET RETURN VALUE: 'cursor'
+        if len(rows) > 0:
+            result_cursor = rows[-1]['cursor']
+        else:
+            result_cursor = my_cursor
+
+        # SET RETURN VALUE: 'has_next'
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM subscription_subscription WHERE id < %s AND writer_id = %s",
+                           [result_cursor, user_id])
+            next_rows = dict_fetch_all(cursor)
+        if len(next_rows) > 0:
+            has_next = True
+        else:
+            has_next = False
+
+        data = {'subscribers': rows, 'has_next': has_next, 'cursor': result_cursor}
+        return Response(data, status=status.HTTP_200_OK)
