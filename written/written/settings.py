@@ -37,8 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework.authtoken',
+
     'rest_framework',
+    'rest_framework.authtoken',
+    'title',
     'subscription',
     'posting',
     'user',
@@ -85,11 +87,11 @@ WSGI_APPLICATION = 'written.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': os.environ['WRITTEN_HOST'] or '127.0.0.1',
-        'PORT': os.environ['WRITTEN_PORT'] or '3306',
-        'NAME': os.environ['WRITTEN_NAME'] or 'written_waffle',
-        'USER': os.environ['WRITTEN_USER'] or 'written-waffle',
-        'PASSWORD': os.environ['WRITTEN_PASSWORD'] or 'toyproject'
+        'HOST': os.environ.get('WRITTEN_HOST') or '127.0.0.1',
+        'PORT': os.environ.get('WRITTEN_PORT') or '3306',
+        'NAME': os.environ.get('WRITTEN_NAME') or 'written_waffle',
+        'USER': os.environ.get('WRITTEN_USER') or 'written-waffle',
+        'PASSWORD': os.environ.get('WRITTEN_PASSWORD') or 'toyproject'
     }
 }
 
