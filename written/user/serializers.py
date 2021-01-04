@@ -9,6 +9,7 @@ from user.models import UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True)
     nickname = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     first_posted_at = serializers.SerializerMethodField()
@@ -17,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id',
+            'username',
             'nickname',
             'description',
             'first_posted_at',
