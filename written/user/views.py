@@ -104,6 +104,12 @@ class UserViewSet(viewsets.GenericViewSet):
         data = {'user': self.get_serializer(user).data, 'access_token': token.key}
         return Response(data, status=status.HTTP_200_OK)
 
+    # PUT /users/logout/
+    @action(detail=False, methods=['POST'])
+    def logout(self, request):
+        logout(request)
+        return Response()
+
     # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):
         user = request.user if pk == 'me' else self.get_object()
