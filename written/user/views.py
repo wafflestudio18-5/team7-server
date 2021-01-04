@@ -178,13 +178,14 @@ class UserViewSet(viewsets.GenericViewSet):
         # INIT VARIABLES
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
             'cursor') else Subscription.objects.last().id + 1
-        page_size = int(request.query_params.get('page_size'))
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else 10
         user_id = request.user.id
         # user_id = 1
 
         # PAGINATION QUERY
         my_query = '''
-            SELECT user_table.id, user_table.username,subs_table.id as 'cursor'
+            SELECT user_table.id
             FROM auth_user AS user_table
             JOIN (SELECT * FROM subscription_subscription WHERE id < %s AND subscriber_id = %s) AS subs_table
             WHERE writer_id=user_table.id
@@ -197,19 +198,25 @@ class UserViewSet(viewsets.GenericViewSet):
 
         # SET RETURN VALUE: 'cursor'
         if len(rows) > 0:
-            result_cursor = rows[-1]['cursor']
+            writer_id = rows[-1]['id']
+            result_cursor = Subscription.objects.get(subscriber_id=user_id, writer_id=writer_id).id
         else:
             result_cursor = my_cursor
 
         # SET RETURN VALUE: 'has_next'
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM subscription_subscription WHERE id < %s AND subscriber_id = %s",
-                                     [result_cursor, user_id])
+                           [result_cursor, user_id])
             next_rows = dict_fetch_all(cursor)
         if len(next_rows) > 0:
             has_next = True
         else:
             has_next = False
+
+        # SET RETURN VALUE: UserProfile's 'nickname', 'description'
+        for i in range(len(rows)):
+            rows[i]['nickname'] = User.objects.get(pk=rows[i]['id']).userprofile.nickname
+            rows[i]['description'] = User.objects.get(pk=rows[i]['id']).userprofile.description
 
         data = {'writers': rows, 'has_next': has_next, 'cursor': result_cursor}
         return Response(data, status=status.HTTP_200_OK)
@@ -221,13 +228,14 @@ class UserViewSet(viewsets.GenericViewSet):
         # INIT VARIABLES
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
             'cursor') else Subscription.objects.last().id + 1
-        page_size = int(request.query_params.get('page_size'))
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else 10
         user_id = request.user.id
         # user_id = 1
 
         # PAGINATION QUERY
         my_query = '''
-                    SELECT user_table.id, user_table.username,subs_table.id as 'cursor'
+                    SELECT user_table.id
                     FROM auth_user AS user_table
                     JOIN (SELECT * FROM subscription_subscription WHERE id < %s AND writer_id = %s) AS subs_table
                     WHERE subscriber_id=user_table.id
@@ -240,7 +248,8 @@ class UserViewSet(viewsets.GenericViewSet):
 
         # SET RETURN VALUE: 'cursor'
         if len(rows) > 0:
-            result_cursor = rows[-1]['cursor']
+            subscriber_id = rows[-1]['id']
+            result_cursor = Subscription.objects.get(subscriber_id=subscriber_id, writer_id=user_id).id
         else:
             result_cursor = my_cursor
 
@@ -253,6 +262,11 @@ class UserViewSet(viewsets.GenericViewSet):
             has_next = True
         else:
             has_next = False
+
+        # SET RETURN VALUE: UserProfile's 'nickname', 'description'
+        for i in range(len(rows)):
+            rows[i]['nickname'] = User.objects.get(pk=rows[i]['id']).userprofile.nickname
+            rows[i]['description'] = User.objects.get(pk=rows[i]['id']).userprofile.description
 
         data = {'subscribers': rows, 'has_next': has_next, 'cursor': result_cursor}
         return Response(data, status=status.HTTP_200_OK)

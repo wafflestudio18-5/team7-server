@@ -3,4 +3,8 @@ from django.contrib.auth.models import User
 
 from .models import UserProfile
 
-admin.site.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nickname', 'description']
+
+
+admin.site.register(UserProfile, UserProfileAdmin)
