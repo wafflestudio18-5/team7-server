@@ -61,20 +61,10 @@ class TitleViewSet(viewsets.GenericViewSet):
             
         if official.lower() == 'true':
             official = True
-        else:
+        elif official.lower() == 'false':
             official = False
-            # titles = titles.filter(is_official=True)
-
-        # if query is not None:
-        #     titles = titles.filter(name__contains=query)
-        
-        # if order == 'recent':
-        #     titles = titles.order_by('-created_at')
-        # elif order == 'oldest':
-        #     titles = titles.order_by('created_at')
-        # else:
-        #     raise TitleDoesNotExistException()
-        
+        else:
+            raise TitleDoesNotExistException()
 
         params = []
         raw_query = '''
@@ -91,8 +81,12 @@ class TitleViewSet(viewsets.GenericViewSet):
         
         params.append(official)
         
+        # name query should be improved
+        # I heard LIKE is inefficient
+        # but haven't found good alternatives
         if query != '':
             raw_query += ' AND name LIKE %s'
+            query = '%' + query + '%'
             params.append(query)
         
         if order == 'recent':
@@ -102,7 +96,9 @@ class TitleViewSet(viewsets.GenericViewSet):
         else:
             raise TitleDoesNotExistException()
         
-        print(raw_query)
+        # for debugging
+        # print(raw_query)
+        # print(params)
 
         titles = Title.objects.raw(raw_query=raw_query, params=params)
 
