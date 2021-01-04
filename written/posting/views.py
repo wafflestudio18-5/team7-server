@@ -132,7 +132,8 @@ class PostingViewSet(viewsets.GenericViewSet):
         # INIT VARIABLES
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
             'cursor') else Scrap.objects.last().id + 1
-        page_size = int(request.query_params.get('page_size'))
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else 3
         user_id = request.user.id
 
         # PAGINATION QUERY
