@@ -39,7 +39,6 @@ class TitleViewSet(viewsets.GenericViewSet):
         order = request.query_params.get('order', 'recent')
         official = request.query_params.get('official', 'true')
         query = request.query_params.get('query', '')
-        # titles = self.get_queryset()
 
         date_now = timezone.now()
         startdate = date_now
@@ -56,7 +55,6 @@ class TitleViewSet(viewsets.GenericViewSet):
                 startdate = enddate - timezone.timedelta(days=30)
             else:
                 raise TitleDoesNotExistException()
-            # titles = titles.filter(created_at__range=[startdate, enddate])
         
             
         if official.lower() == 'true':
