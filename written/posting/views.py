@@ -109,6 +109,7 @@ class PostingViewSet(viewsets.GenericViewSet):
             raise AlreadyScrappedException()
         except Scrap.DoesNotExist:
             Scrap.objects.create(user_id=user_id, posting_id=posting.id)
+        return Response(status=status.HTTP_200_OK)
 
     # POST postings/{posting_id}/unscrap
     @action(detail=True, methods=['POST'], url_path='unscrap')
@@ -123,6 +124,7 @@ class PostingViewSet(viewsets.GenericViewSet):
             scrap.delete()
         except Scrap.DoesNotExist:
             raise AlreadyUnscrappedException()
+        return Response(status=status.HTTP_200_OK)
 
     # GET postings/scrapped/
     @action(detail=False, methods=['GET'], url_path='scrapped')
@@ -135,7 +137,7 @@ class PostingViewSet(viewsets.GenericViewSet):
 
         # PAGINATION QUERY
         my_query = '''
-                    SELECT posting_table.id, posting_table.title_id,posting_table.content,scrap_table.created_at, scrap_table.id as 'cursor'
+                    SELECT posting_table.id, posting_table.title_id as 'title',posting_table.content,scrap_table.created_at as 'scrapped_at'
                     FROM  posting_posting AS posting_table
                     JOIN (SELECT * FROM scrap_scrap WHERE id < %s AND user_id = %s) AS scrap_table
                     WHERE scrap_table.posting_id=posting_table.id
@@ -148,7 +150,8 @@ class PostingViewSet(viewsets.GenericViewSet):
 
         # SET RETURN VALUE: 'cursor'
         if len(rows) > 0:
-            result_cursor = rows[-1]['cursor']
+            posting_id = rows[-1]['id']
+            result_cursor = Scrap.objects.get(posting_id=posting_id,user_id=user_id).id
         else:
             result_cursor = my_cursor
 
@@ -161,6 +164,10 @@ class PostingViewSet(viewsets.GenericViewSet):
             has_next = True
         else:
             has_next = False
+
+        # title_id -> Title.name
+        for i in range(len(rows)):
+            rows[i]['title'] = Title.objects.get(pk=rows[i]['title']).name
 
         data = {'stored_postings': rows, 'has_next': has_next, 'cursor': result_cursor}
         return Response(data, status=status.HTTP_200_OK)
