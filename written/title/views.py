@@ -6,6 +6,7 @@ from title.models import Title
 from title.serializers import TitleSerializer, TitleUpdateSerializer
 from django.utils import timezone
 from written.error_codes import *
+from django.db import connection
 
 # API Titles
 # GET /titles/
@@ -19,6 +20,15 @@ def get_title(title_id):
     except Title.DoesNotExist:
         return None
 
+# from shchoi94
+def dict_fetch_all(cursor):
+    # Return all rows from a cursor as a dict
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
+
 class TitleViewSet(viewsets.GenericViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
@@ -28,17 +38,11 @@ class TitleViewSet(viewsets.GenericViewSet):
 
     # GET /titles/
     def list(self, request):
-        # my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
-        #     'cursor') else Title.objects.last().id + 1
-        # page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-        #     'page_size') else 10
-
-        # user = request.user
-
+        # query with time, official, name, order
         time = request.query_params.get('time', 'all')
-        order = request.query_params.get('order', 'recent')
         official = request.query_params.get('official', 'true')
         query = request.query_params.get('query', '')
+        order = request.query_params.get('order', 'recent')
 
         date_now = timezone.now()
         startdate = date_now
@@ -63,44 +67,80 @@ class TitleViewSet(viewsets.GenericViewSet):
             official = False
         else:
             raise TitleDoesNotExistException()
-
-        params = []
+        
+        # concatenate MySQL statements and params for SQL statements
         raw_query = '''
             SELECT * 
             FROM title_title
         '''
+        params = []
+        
+        # cursor for pagination
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else Title.objects.last().id + 1
+        
+        raw_query += 'WHERE id < %s'
+        params.append(my_cursor)
+
+        # time
         if time != 'all':
-            raw_query += 'WHERE created_at >= %s AND created_at <= %s'
+            raw_query += ' AND created_at >= %s AND created_at <= %s'
             params.append(startdate)
             params.append(enddate)
-            raw_query += 'AND is_official = %s'
-        else:
-            raw_query += 'WHERE is_official = %s'
-        
+
+        # official
+        raw_query += ' AND is_official = %s'
         params.append(official)
         
-        # name query should be improved
-        # I heard LIKE is inefficient
-        # but haven't found good alternatives
+        # name
+        # this query should be improved
+        # I've heard LIKE is inefficient but haven't found good alternatives
         if query != '':
             raw_query += ' AND name LIKE %s'
             query = '%' + query + '%'
             params.append(query)
         
+        # order
         if order == 'recent':
             raw_query += ' ORDER BY created_at DESC'
         elif order == 'oldest':
             raw_query += ' ORDER BY created_at ASC'
         else:
             raise TitleDoesNotExistException()
+
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else 10
+
+        params.append(page_size)
+        raw_query += ' LIMIT %s'
+
+        print(raw_query) #DEBUG
+        with connection.cursor() as cursor:
+            cursor.execute(raw_query, params)
+            titles = dict_fetch_all(cursor)
+        print(titles) #DEBUG
+        titles_data = self.get_serializer(titles, many=True).data
         
-        # for debugging
-        # print(raw_query)
-        # print(params)
+        # SET RETURN VALUE: 'cursor'
+        if len(titles) > 0:
+            title_id = titles[-1]['id']
+            result_cursor = Title.objects.get(pk=title_id).id
+        else:
+            result_cursor = my_cursor
 
-        titles = Title.objects.raw(raw_query=raw_query, params=params)
+        # SET RETURN VALUE: 'has_next'
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM title_title WHERE id < %s",
+                           [result_cursor])
+            next_rows = dict_fetch_all(cursor)
+        if len(next_rows) > 0:
+            has_next = True
+        else:
+            has_next = False
 
-        return Response(self.get_serializer(titles, many=True).data)
+        return_data = {'titles': titles_data, 'has_next': has_next, 'cursor': result_cursor}
+        # return Response(self.get_serializer(titles, many=True).data)
+        return Response(titles_data)
 
     # POST /titles/
     def create(self, request):
