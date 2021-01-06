@@ -46,6 +46,10 @@ class TitleViewSet(viewsets.GenericViewSet):
         official = request.query_params.get('official', 'all')
         query = request.query_params.get('query', '')
         order = request.query_params.get('order', 'recent')
+        
+        only_official = False
+        if official.lower() == 'true':
+            only_official = True
 
         date_now = timezone.now()
         startdate = date_now
@@ -63,12 +67,6 @@ class TitleViewSet(viewsets.GenericViewSet):
             else:
                 raise TitleDoesNotExistException()
             
-        if official.lower() == 'true':
-            official = True
-        elif official.lower() == 'all':
-            official = False
-        else:
-            raise TitleDoesNotExistException()
         
         # concatenate MySQL statements and params for SQL statements
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
@@ -87,9 +85,9 @@ class TitleViewSet(viewsets.GenericViewSet):
             params.append(enddate)
 
         # official
-        if official:
+        if only_official:
             raw_query += ' AND is_official = %s'
-            params.append(official)
+            params.append(only_official)
         
         # name
         # this query should be improved

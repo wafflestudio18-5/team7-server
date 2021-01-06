@@ -7,6 +7,7 @@ from posting.models import Posting
 from posting.serializers import PostingSerializer, PostingRetrieveSerializer, PostingUpdateSerializer
 from title.models import Title
 from written.error_codes import *
+from django.utils import timezone
 
 def get_posting(posting_id):
     try:
@@ -75,3 +76,5 @@ class PostingViewSet(viewsets.GenericViewSet):
             raise UserNotAuthorizedException()
         posting.delete()
         return Response(status=status.HTTP_200_OK)     
+
+    

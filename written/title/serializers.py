@@ -7,6 +7,7 @@ from title.models import Title
 from posting.models import Posting
 from posting.serializers import PostingRetrieveSerializer
 from written.error_codes import *
+from django.utils import timezone
 
 class TitleSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
@@ -31,7 +32,7 @@ class TitleSerializer(serializers.ModelSerializer):
         return data
 
     def get_postings(self, title):
-        if(type(title) == dict):
+        if type(title) == dict:
             title = Title.objects.get(pk=title['id'])            
         postings = title.postings.all()
         return PostingRetrieveSerializer(postings, many=True).data

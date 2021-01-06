@@ -7,9 +7,9 @@ from posting.models import Posting
 from title.models import Title
 from written.error_codes import *
 from user.serializers import SmallUserSerializer
+from django.utils import timezone
 
 class PostingSerializer(serializers.ModelSerializer):
-    # title = serializers.SerializerMethodField()
     title = serializers.CharField()
     writer = serializers.SerializerMethodField(allow_null=True)
     content = serializers.CharField(style={'base_template': 'textarea.html'})
@@ -34,7 +34,11 @@ class PostingSerializer(serializers.ModelSerializer):
         if data.get('content') is None:
             raise ContentIsEmptyException
         data_copy = data
-        title = Title.objects.get(name=data['title'])
+        try:
+            title = Title.objects.get(name=data['title'])
+        except Title.DoesNotExist:
+            title = Title.objects.create(name=data.get('title'), 
+                    created_at=timezone.now(), updated_at=timezone.now(), is_official=False)
         data_copy['title'] = Title.objects.get(name=data['title'])
         return data_copy
 
@@ -48,9 +52,6 @@ class PostingSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
-
-
-        
 
 class PostingRetrieveSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
