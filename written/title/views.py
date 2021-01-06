@@ -146,11 +146,21 @@ class TitleViewSet(viewsets.GenericViewSet):
         title = serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    # GET /titles/today/
+    @action(detail=True, methods=['GET'], url_path='today')
+    def today(self, request):
+        try:
+            title = Title.objects.last()
+        except:
+            raise TitleDoesNotExistException()
+        return Response(self.get_serializer(title).data)
+
     # GET /titles/{title_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings(self, request, pk=None):
-        title = get_title(pk)
-        if not title:
+        try:
+            title = get_title(pk)
+        except Title.DoesNotExist:
             raise TitleDoesNotExistException()
         
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
@@ -192,3 +202,5 @@ class TitleViewSet(viewsets.GenericViewSet):
         return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': result_cursor}
 
         return Response(return_data)
+
+        
