@@ -189,7 +189,6 @@ class GetUserPostingsTestCase(TestCase):
             content_type='application/json'
         )
         data = response.json()
-        print(data)
         self.token = data["access_token"]
         self.id = data["user"]["id"]
 
@@ -249,10 +248,39 @@ class GetUserPostingsTestCase(TestCase):
         )
 
     def test_get_user_posting(self):
-        cursor = 1
-        page_size = 1
+        cursor = 0
+        page_size = 2
         response = self.client.get(
             f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
         )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], 2)
+        self.assertEqual(data["has_next"], True)
+
+        cursor = data["cursor"]
+        page_size = 2
+        response = self.client.get(
+            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], 4)
+        self.assertEqual(data["has_next"], True)
+
+        cursor = data["cursor"]
+        page_size = 2
+        response = self.client.get(
+            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], 5)
+        self.assertEqual(data["has_next"], False)
+

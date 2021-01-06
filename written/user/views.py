@@ -12,6 +12,9 @@ import requests
 from subscription.models import Subscription
 from written.error_codes import *
 from user.token import check_token
+from posting.models import Posting
+from django.db import connection
+
 
 # API User==================================================================
 # POST /users/
@@ -26,6 +29,14 @@ from user.token import check_token
 # POST /users/{user_id}/unsubscribe/
 # GET /users/subscribed/
 # GET /users/subscriber/
+
+def dict_fetch_all(cursor):
+    # Return all rows from a cursor as a dict
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
 
 
 def get_writer(writer_id):
@@ -45,11 +56,11 @@ def get_subscription(subscriber_id, writer_id):
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated(), )
+    permission_classes = (IsAuthenticated(),)
 
     def get_permissions(self):
         if self.action in ('create', 'login'):
-            return (AllowAny(), )
+            return (AllowAny(),)
         return self.permission_classes
 
     # API User===============================================================
@@ -130,9 +141,47 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings_of_user(self, request, pk):
-        user = User.objects.get(id=pk)
-        print(user.postings.count())
-        return Response(status=status.HTTP_200_OK)
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoseNotExist:
+            raise UserDoesNotExistException
+
+        try:
+            cursor = request.GET['cursor']
+        except KeyError:
+            cursor = 0
+        try:
+            page_size = request.GET['page_size']
+        except KeyError:
+            page_size = 10
+
+        pagination_query = f'SELECT posting.id AS id, user.id AS user_id, nickname, content, alignment, name, is_public, posting.created_at AS created_at ' \
+                           f'FROM posting_posting AS posting ' \
+                           f'INNER JOIN auth_user AS user ' \
+                           f'INNER JOIN title_title AS title ' \
+                           f'INNER JOIN user_userprofile AS profile ' \
+                           f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
+                           f'WHERE user.id = {user.id} AND posting.id > {cursor} ' \
+                           f'ORDER BY posting.id ASC ' \
+                           f'LIMIT {page_size};'
+
+        with connection.cursor() as cursor:
+            cursor.execute(pagination_query)
+            rows = dict_fetch_all(cursor)
+        postings=[]
+        if len(rows) > 0:
+            for row in rows:
+                writer = {"id": row['user_id'], "nickname": row['nickname']}
+                postings.append({"id": row["id"], "title": row["name"], "writer": writer,
+                                 "content": row["content"], "alignment": row["alignment"],
+                                 "id_public": row["is_public"], "created_at": row["created_at"]})
+            next_cursor = rows[len(rows)-1]['id']
+            has_next = True if Posting.objects.last().id > next_cursor else False
+        else:
+            has_next = False
+            next_cursor = None
+
+        return Response({"postings": postings, "has_next": has_next, "cursor": next_cursor}, status=status.HTTP_200_OK)
 
     # API Subscription===========================================================
     # ===========================================================================
