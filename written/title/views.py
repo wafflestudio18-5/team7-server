@@ -1,9 +1,12 @@
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from title.models import Title
 from title.serializers import TitleSerializer, TitleUpdateSerializer
+from posting.models import Posting
+from posting.serializers import PostingRetrieveSerializer
 from django.utils import timezone
 from written.error_codes import *
 from django.db import connection
@@ -152,8 +155,49 @@ class TitleViewSet(viewsets.GenericViewSet):
 
     # GET /titles/{title_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
-    def retrieve(self, request, pk=None):
+    def postings(self, request, pk=None):
         title = get_title(pk)
         if not title:
             raise TitleDoesNotExistException()
-        return Response(self.get_serializer(title).data)
+        
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else Posting.objects.last().id + 1
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else 2
+
+        raw_query = '''
+            SELECT * 
+            FROM posting_posting AS posting_table
+            WHERE id < %s
+            AND title_id=%s
+            LIMIT %s
+        '''
+        params = [my_cursor, title.id, page_size]
+
+        with connection.cursor() as cursor:
+            cursor.execute(raw_query, params)
+            postings = dict_fetch_all(cursor)
+        print(postings) #DEBUG
+        # postings_data = PostingRetrieveSerializer(postings, many=True).data
+        postings_data = postings
+
+        # SET RETURN VALUE: 'cursor'
+        if len(postings) > 0:
+            posting_id = postings[-1]['id']
+            result_cursor = Posting.objects.get(pk=posting_id).id
+        else:
+            result_cursor = my_cursor
+
+        # SET RETURN VALUE: 'has_next'
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1 FROM title_title WHERE id < %s",
+                           [result_cursor])
+            next_rows = dict_fetch_all(cursor)
+        if len(next_rows) > 0:
+            has_next = True
+        else:
+            has_next = False
+
+        return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': result_cursor}
+
+        return Response(return_data)
