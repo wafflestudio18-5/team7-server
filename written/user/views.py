@@ -161,7 +161,7 @@ class UserViewSet(viewsets.GenericViewSet):
                            f'INNER JOIN title_title AS title ' \
                            f'INNER JOIN user_userprofile AS profile ' \
                            f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
-                           f'WHERE user.id = {user.id} AND posting.id > {cursor} ' \
+                           f'WHERE user.id = {user.id} AND posting.id > {cursor} AND posting.is_public = True ' \
                            f'ORDER BY posting.id ASC ' \
                            f'LIMIT {page_size};'
 
