@@ -147,7 +147,7 @@ class TitleViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     # GET /titles/today/
-    @action(detail=True, methods=['GET'], url_path='today')
+    @action(detail=False, methods=['GET'], url_path='today')
     def today(self, request):
         try:
             title = Title.objects.last()
