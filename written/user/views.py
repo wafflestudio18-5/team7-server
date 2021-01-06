@@ -88,11 +88,20 @@ class UserViewSet(viewsets.GenericViewSet):
     def login(self, request):
         if not check_token(request.data):
             raise InvalidFacebookTokenException
-        user = User.objects.get(username=request.data.get("username"))
+        try:
+            user = User.objects.get(username=request.data.get("username"))
+        except User.DoesNotExist:
+            raise UserNotSignedUpException
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
         data = {'user': self.get_serializer(user).data, 'access_token': token.key}
         return Response(data, status=status.HTTP_200_OK)
+
+    # PUT /users/logout/
+    @action(detail=False, methods=['POST'])
+    def logout(self, request):
+        logout(request)
+        return Response()
 
     # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):

@@ -14,6 +14,7 @@ def check_token(data):
     response_data = response.json()
     if response_data["id"] != facebookid:
         return False
+    data["username"] = facebookid
     return True
 
 
@@ -24,4 +25,5 @@ def mocked_check_token(data):
         return False
     if access_token != facebookid:
         return False
+    data["username"] = facebookid
     return True

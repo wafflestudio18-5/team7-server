@@ -89,6 +89,13 @@ class UserAlreadySignedUpException(WrittenException):
     message = "User already signed up"
 
 
+class UserNotSignedUpException(WrittenException):
+    status_code = 400
+    error_code = 10006
+    message = "Not signed up"
+
+
+
 # 20000 Postings
 class TitleDoesNotExistException(WrittenException):
     status_code = 400
@@ -113,6 +120,10 @@ class TitleNameIsEmptyException(WrittenException):
     error_code = 20005
     message = "Title name is empty"
 
+class TitleNameIsDuplicateException(WrittenException):
+    status_code = 400
+    error_code = 20006
+    message = "Title name is duplicate"
 
 # 30000 Subscriptions
 class AlreadySubscribedException(WrittenException):
