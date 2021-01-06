@@ -95,7 +95,6 @@ class UserNotSignedUpException(WrittenException):
     message = "Not signed up"
 
 
-
 # 20000 Postings
 class TitleDoesNotExistException(WrittenException):
     status_code = 400
