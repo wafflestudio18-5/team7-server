@@ -150,7 +150,8 @@ class TitleViewSet(viewsets.GenericViewSet):
         title = serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # GET /titles/{title_id}/
+    # GET /titles/{title_id}/postings/
+    @action(detail=True, methods=['GET'], url_path='postings')
     def retrieve(self, request, pk=None):
         title = get_title(pk)
         if not title:

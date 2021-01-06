@@ -32,7 +32,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def get_postings(self, title):
         print('get_postings, title:')
-        print(title)
+        print(title) #DEBUG
         if(type(title) == dict):
             title = Title.objects.get(pk=title['id'])            
         postings = title.postings.all()
