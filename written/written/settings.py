@@ -26,7 +26,11 @@ SECRET_KEY = 'cjjcv0ue5(czeo&ef3m8b(cg9+8_yi3+&$d5mt2=5cqqmr_k87'
 DEBUG = True
 DEBUG_TOOLBAR = os.getenv('DEBUG_TOOLBAR') in ('true', 'True')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '13.125.159.22',
+    'localhost',
+    '127.0.0.1',
+    ]
 
 # Application definition
 
