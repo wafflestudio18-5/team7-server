@@ -113,11 +113,9 @@ class TitleViewSet(viewsets.GenericViewSet):
         params.append(page_size)
         raw_query += ' LIMIT %s'
 
-        print(raw_query) #DEBUG
         with connection.cursor() as cursor:
             cursor.execute(raw_query, params)
             titles = dict_fetch_all(cursor)
-        print(titles) #DEBUG
         titles_data = self.get_serializer(titles, many=True).data
         
         # SET RETURN VALUE: 'cursor'
@@ -172,8 +170,6 @@ class TitleViewSet(viewsets.GenericViewSet):
         with connection.cursor() as cursor:
             cursor.execute(raw_query, params)
             postings = dict_fetch_all(cursor)
-        print(postings) #DEBUG
-        # postings_data = PostingRetrieveSerializer(postings, many=True).data
         postings_data = postings
 
         # SET RETURN VALUE: 'cursor'
