@@ -130,6 +130,8 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings_of_user(self, request, pk):
+        user = User.objects.get(id=pk)
+        print(user.postings.count())
         return Response(status=status.HTTP_200_OK)
 
     # API Subscription===========================================================
