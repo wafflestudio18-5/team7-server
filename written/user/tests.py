@@ -6,6 +6,7 @@ import json
 from unittest.mock import patch
 from user.token import mocked_check_token
 from user.models import UserProfile
+from title.models import Title
 
 
 @patch("user.views.check_token", mocked_check_token)
@@ -170,3 +171,116 @@ class PutUserMeTestCase(TestCase):
 
         self.assertEqual(data['nickname'], 'seunghan')
         self.assertEqual(data['description'], 'pop stars')
+
+
+class GetUserPostingsTestCase(TestCase):
+    client = Client()
+    token = ""
+
+    @patch("user.views.check_token", mocked_check_token)
+    def setUp(self):
+        response = self.client.post(
+            '/users/',
+            json.dumps({
+                "facebookid": "1",
+                "access_token": "1",
+                "nickname": "seunghan",
+            }),
+            content_type='application/json'
+        )
+        data = response.json()
+        self.token = data["access_token"]
+        self.id = data["user"]["id"]
+
+        Title.objects.create(name="1", is_official=True)
+        Title.objects.create(name="2", is_official=True)
+        Title.objects.create(name="3", is_official=True)
+
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "1",
+                "content": "1",
+                "alignment": "LEFT",
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "2",
+                "content": "1",
+                "alignment": "CENTER",
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "2",
+                "content": "2",
+                "alignment": "CENTER",
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "3",
+                "content": "1",
+                "alignment": "CENTER",
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "3",
+                "content": "2",
+                "alignment": "CENTER",
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+
+    def test_get_user_posting(self):
+        cursor = 0
+        page_size = 2
+        response = self.client.get(
+            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], 2)
+        self.assertEqual(data["has_next"], True)
+
+        cursor = data["cursor"]
+        page_size = 2
+        response = self.client.get(
+            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], 4)
+        self.assertEqual(data["has_next"], True)
+
+        cursor = data["cursor"]
+        page_size = 2
+        response = self.client.get(
+            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        data = response.data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["cursor"], None)
+        self.assertEqual(data["has_next"], False)
+
