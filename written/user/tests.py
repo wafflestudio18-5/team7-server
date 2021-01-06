@@ -281,6 +281,6 @@ class GetUserPostingsTestCase(TestCase):
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data["cursor"], 5)
+        self.assertEqual(data["cursor"], None)
         self.assertEqual(data["has_next"], False)
 

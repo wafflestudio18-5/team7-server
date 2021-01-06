@@ -147,11 +147,11 @@ class UserViewSet(viewsets.GenericViewSet):
             raise UserDoesNotExistException
 
         try:
-            cursor = request.GET['cursor']
+            cursor = int(request.GET['cursor'])
         except KeyError:
             cursor = 0
         try:
-            page_size = request.GET['page_size']
+            page_size = int(request.GET['page_size'])
         except KeyError:
             page_size = 10
 
@@ -163,23 +163,24 @@ class UserViewSet(viewsets.GenericViewSet):
                            f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
                            f'WHERE user.id = {user.id} AND posting.id > {cursor} AND posting.is_public = True ' \
                            f'ORDER BY posting.id ASC ' \
-                           f'LIMIT {page_size};'
+                           f'LIMIT {page_size+1};'
 
         with connection.cursor() as cursor:
             cursor.execute(pagination_query)
             rows = dict_fetch_all(cursor)
         postings=[]
-        if len(rows) > 0:
-            for row in rows:
-                writer = {"id": row['user_id'], "nickname": row['nickname']}
-                postings.append({"id": row["id"], "title": row["name"], "writer": writer,
-                                 "content": row["content"], "alignment": row["alignment"],
-                                 "id_public": row["is_public"], "created_at": row["created_at"]})
-            next_cursor = rows[len(rows)-1]['id']
-            has_next = True if Posting.objects.last().id > next_cursor else False
+        for i in range(len(rows)-1):
+            row = rows[i]
+            writer = {"id": row['user_id'], "nickname": row['nickname']}
+            postings.append({"id": row["id"], "title": row["name"], "writer": writer,
+                             "content": row["content"], "alignment": row["alignment"],
+                             "id_public": row["is_public"], "created_at": row["created_at"]})
+        if len(rows) == page_size+1:
+            next_cursor = rows[len(rows)-2]['id']
+            has_next = True
         else:
-            has_next = False
             next_cursor = None
+            has_next = False
 
         return Response({"postings": postings, "has_next": has_next, "cursor": next_cursor}, status=status.HTTP_200_OK)
 
