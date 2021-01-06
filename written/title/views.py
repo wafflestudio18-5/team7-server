@@ -43,7 +43,7 @@ class TitleViewSet(viewsets.GenericViewSet):
     def list(self, request):
         # query with time, official, name, order
         time = request.query_params.get('time', 'all')
-        official = request.query_params.get('official', 'true')
+        official = request.query_params.get('official', 'all')
         query = request.query_params.get('query', '')
         order = request.query_params.get('order', 'recent')
 
@@ -62,28 +62,23 @@ class TitleViewSet(viewsets.GenericViewSet):
                 startdate = enddate - timezone.timedelta(days=30)
             else:
                 raise TitleDoesNotExistException()
-        
             
         if official.lower() == 'true':
             official = True
-        elif official.lower() == 'false':
+        elif official.lower() == 'all':
             official = False
         else:
             raise TitleDoesNotExistException()
         
         # concatenate MySQL statements and params for SQL statements
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else Title.objects.last().id + 1
         raw_query = '''
             SELECT * 
             FROM title_title
+            WHERE id < %s
         '''
-        params = []
-        
-        # cursor for pagination
-        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
-            'cursor') else Title.objects.last().id + 1
-        
-        raw_query += 'WHERE id < %s'
-        params.append(my_cursor)
+        params = [my_cursor]
 
         # time
         if time != 'all':
@@ -92,8 +87,9 @@ class TitleViewSet(viewsets.GenericViewSet):
             params.append(enddate)
 
         # official
-        raw_query += ' AND is_official = %s'
-        params.append(official)
+        if official:
+            raw_query += ' AND is_official = %s'
+            params.append(official)
         
         # name
         # this query should be improved
@@ -112,7 +108,7 @@ class TitleViewSet(viewsets.GenericViewSet):
             raise TitleDoesNotExistException()
 
         page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else 10
+            'page_size') else 5
 
         params.append(page_size)
         raw_query += ' LIMIT %s'
@@ -133,7 +129,7 @@ class TitleViewSet(viewsets.GenericViewSet):
 
         # SET RETURN VALUE: 'has_next'
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM title_title WHERE id < %s",
+            cursor.execute("SELECT 1 FROM title_title WHERE id < %s",
                            [result_cursor])
             next_rows = dict_fetch_all(cursor)
         if len(next_rows) > 0:
@@ -142,7 +138,6 @@ class TitleViewSet(viewsets.GenericViewSet):
             has_next = False
 
         return_data = {'titles': titles_data, 'has_next': has_next, 'cursor': result_cursor}
-        # return Response(self.get_serializer(titles, many=True).data)
         return Response(titles_data)
 
     # POST /titles/
