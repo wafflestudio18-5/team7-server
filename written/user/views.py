@@ -127,6 +127,13 @@ class UserViewSet(viewsets.GenericViewSet):
         data["count_public_postings"] = user.postings.filter(is_public=True).count()
         if pk == "me":
             data["count_all_postings"] = user.postings.count()
+        else:
+            try:
+                Subscription.objects.get(subscriber=request.user, writer=user)
+                subscribing = True
+            except Subscription.DoesNotExist:
+                subscribing = False
+            data["subscribing"] = subscribing
         return Response(data, status=status.HTTP_200_OK)
 
     # PUT /users/me/

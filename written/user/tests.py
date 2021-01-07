@@ -183,8 +183,24 @@ class GetUserTestCase(TestCase):
             HTTP_AUTHORIZATION=self.token_2
         )
         data = response.json()
+        self.assertEqual(data["subscribing"], False)
         self.assertEqual(data["count_public_postings"], 20)
 
+        response = self.client.post(
+            f'/users/{self.id_1}/subscribe/',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token_2
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(
+            f'/users/{self.id_1}/',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token_2
+        )
+        data = response.json()
+        self.assertEqual(data["subscribing"], True)
+        self.assertEqual(data["count_public_postings"], 20)
 
 class PutUserMeTestCase(TestCase):
     client = Client()
@@ -443,6 +459,7 @@ class GetUsersSubscribedTestCase(TestCase):
         self.assertEqual(len(data["writers"]), 4)
         self.assertEqual(data["has_next"], False)
         self.assertEqual(data["cursor"], None)
+
 
 class GetUsersSubscribedTestCase(TestCase):
     client = Client()
