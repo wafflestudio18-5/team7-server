@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from title.models import Title
-from title.serializers import TitleSerializer, TitleSmallSerializer, TitleUpdateSerializer
+from title.serializers import TitleSerializer, TitleSmallSerializer
 from posting.models import Posting
 from posting.serializers import PostingRetrieveSerializer, PostingDictSerializer
 from django.utils import timezone

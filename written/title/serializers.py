@@ -12,13 +12,13 @@ from django.utils import timezone
 class TitleSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     postings = serializers.SerializerMethodField()
-    is_official = serializers.BooleanField(default=False)
+    # is_official = serializers.BooleanField(default=False)
     class Meta:
         model = Title
         fields = (
             'id',
             'name',
-            'is_official',
+            # 'is_official',
             'postings',
         )
     def validate(self, data):
@@ -38,7 +38,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class TitleSmallSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
-    is_official = serializers.BooleanField(default=False)
+    # is_official = serializers.BooleanField(default=False)
     count_public_postings = serializers.SerializerMethodField()
     count_all_postings = serializers.SerializerMethodField()
     class Meta:
@@ -46,7 +46,7 @@ class TitleSmallSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'name',
-            'is_official',
+            # 'is_official',
             'count_public_postings',
             'count_all_postings',
         )
@@ -69,20 +69,3 @@ class TitleSmallSerializer(serializers.ModelSerializer):
         if type(title) == dict:
             title = Title.objects.get(pk=title['id'])
         return title.postings.count()
-
-class TitleUpdateSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()
-    postings = serializers.SerializerMethodField()
-    is_official = serializers.BooleanField()
-    class Meta:
-        model = Title
-        fields = (
-            'id',
-            'name',
-            'is_official',
-            'postings',
-        )
-
-    def get_postings(self, title):
-        postings = title.postings.all()
-        return PostingRetrieveSerializer(postings, many=True).data

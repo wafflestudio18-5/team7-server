@@ -41,7 +41,6 @@ class PostTitleTestCase(TestCase):
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(data['name'], 'title1')
-        self.assertEqual(data['is_official'], False)
         self.assertEqual(data['postings'], [])
 
     def test_invalid_post_titles_name_duplicate(self):
