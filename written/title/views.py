@@ -28,10 +28,17 @@ def dict_fetch_all(cursor):
     ]
 
 class TitleViewSet(viewsets.GenericViewSet):
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     TITLES_PAGE_SIZE_DEFAULT = 4
     POSTINGS_PAGE_SIZE_DEFAULT = 4
+    queryset = Title.objects.all()
+    permission_classes = (IsAuthenticated(), )
+    serializer_class = TitleSerializer
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return (AllowAny(), )
+        return self.permission_classes
+        
     def get_serializer_class(self):
         return self.serializer_class
 
