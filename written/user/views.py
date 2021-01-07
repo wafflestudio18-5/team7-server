@@ -121,7 +121,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 user = request.user
             else:
                 user = User.objects.get(id=pk)
-        except User.DoseNotExist:
+        except User.DoesNotExist:
             raise UserDoesNotExistException()
         data = self.get_serializer(user).data
         data["count_public_postings"] = user.postings.filter(is_public=True).count()
