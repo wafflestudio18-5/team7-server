@@ -48,8 +48,11 @@ class TitleViewSet(viewsets.GenericViewSet):
         query = request.query_params.get('query', '')
         order = request.query_params.get('order', 'recent')
         
-        if only_official and only_official.lower() == 'true':
-            only_official = True
+        if only_official:
+            if only_official.lower() == 'true':
+                only_official = True
+            else:
+                raise TitleDoesNotExistException()
 
         date_now = timezone.now()
         startdate = date_now
@@ -130,7 +133,7 @@ class TitleViewSet(viewsets.GenericViewSet):
 
         titles_data = TitleSmallSerializer(titles, many=True).data
         return_data = {'titles': titles_data, 'has_next': has_next, 'cursor': next_cursor}
-        return Response(titles_data)
+        return Response(return_data)
 
     # POST /titles/
     def create(self, request):
