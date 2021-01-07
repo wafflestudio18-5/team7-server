@@ -365,3 +365,79 @@ class GetUsersSubscribedTestCase(TestCase):
         self.assertEqual(len(data["writers"]), 4)
         self.assertEqual(data["has_next"], False)
         self.assertEqual(data["cursor"], None)
+
+class GetUsersSubscribedTestCase(TestCase):
+    client = Client()
+    token = []
+    id = []
+
+    @patch("user.views.check_token", mocked_check_token)
+    def setUp(self):
+        for i in range(20):  # create user 0 ~ 19
+            response = self.client.post(
+                '/users/',
+                json.dumps({
+                    "facebookid": f"{i}",
+                    "access_token": f"{i}",
+                    "nickname": f"{i}",
+                }),
+                content_type='application/json'
+            )
+            data = response.json()
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.token.append("Token " + data["access_token"])
+            self.id.append(data["user"]["id"])
+
+        for i in range(1, 20):  # user 1~19 subscribe user 0
+            response = self.client.post(
+                f'/users/{self.id[0]}/subscribe/',
+                content_type='application/json',
+                HTTP_AUTHORIZATION=self.token[i]
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_user_subscribe(self):
+        page_size = 5
+        response = self.client.get(
+            f'/users/subscriber/?page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token[0]
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["subscribers"]), page_size)
+        self.assertEqual(data["has_next"], True)
+        cursor = data["cursor"]
+
+        response = self.client.get(
+            f'/users/subscriber/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token[0]
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["subscribers"]), page_size)
+        self.assertEqual(data["has_next"], True)
+        cursor = data["cursor"]
+
+        response = self.client.get(
+            f'/users/subscriber/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token[0]
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["subscribers"]), page_size)
+        self.assertEqual(data["has_next"], True)
+        cursor = data["cursor"]
+
+        response = self.client.get(
+            f'/users/subscriber/?cursor={cursor}&page_size={page_size}',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token[0]
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["subscribers"]), 4)
+        self.assertEqual(data["has_next"], False)
+        self.assertEqual(data["cursor"], None)
