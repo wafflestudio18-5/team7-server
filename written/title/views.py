@@ -35,7 +35,8 @@ def dict_fetch_all(cursor):
 class TitleViewSet(viewsets.GenericViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    
+    TITLES_PAGE_SIZE_DEFAULT = 4
+    POSTINGS_PAGE_SIZE_DEFAULT = 4
     def get_serializer_class(self):
         return self.serializer_class
 
@@ -105,34 +106,30 @@ class TitleViewSet(viewsets.GenericViewSet):
             raise TitleDoesNotExistException()
 
         page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else 8
+            'page_size') else self.TITLES_PAGE_SIZE_DEFAULT
 
-        params.append(page_size)
+        params.append(page_size+1)
         raw_query += ' LIMIT %s'
 
         with connection.cursor() as cursor:
             cursor.execute(raw_query, params)
             titles = dict_fetch_all(cursor)
-        titles_data = TitleSmallSerializer(titles, many=True).data
         
-        # SET RETURN VALUE: 'cursor'
-        if len(titles) > 0:
-            title_id = titles[-1]['id']
-            result_cursor = Title.objects.get(pk=title_id).id
-        else:
-            result_cursor = my_cursor
-
         # SET RETURN VALUE: 'has_next'
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM title_title WHERE id < %s",
-                           [result_cursor])
-            next_rows = dict_fetch_all(cursor)
-        if len(next_rows) > 0:
+        if len(titles) == page_size+1:
             has_next = True
+            del titles[-1]
         else:
             has_next = False
 
-        return_data = {'titles': titles_data, 'has_next': has_next, 'cursor': result_cursor}
+        # SET RETURN VALUE: 'cursor'
+        if has_next:
+            next_cursor = titles[-1]['id']
+        else:
+            next_cursor = None
+
+        titles_data = TitleSmallSerializer(titles, many=True).data
+        return_data = {'titles': titles_data, 'has_next': has_next, 'cursor': next_cursor}
         return Response(titles_data)
 
     # POST /titles/
@@ -163,7 +160,7 @@ class TitleViewSet(viewsets.GenericViewSet):
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
             'cursor') else Posting.objects.last().id + 1
         page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else 2
+            'page_size') else self.POSTINGS_PAGE_SIZE_DEFAULT
 
         raw_query = f'''
             SELECT * 
