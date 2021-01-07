@@ -5,8 +5,11 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from posting.models import Posting
 from posting.serializers import PostingSerializer, PostingRetrieveSerializer, PostingUpdateSerializer
+from subscription.models import Subscription
 from title.models import Title
 from written.error_codes import *
+from django.utils import timezone
+
 
 def get_posting(posting_id):
     try:
@@ -17,12 +20,12 @@ def get_posting(posting_id):
 class PostingViewSet(viewsets.GenericViewSet):
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
+    permission_classes = (IsAuthenticated(), )
 
-    def get_serializer_class(self):
-        return self.serializer_class
-
-    # TODO? permission_classes = (IsAuthenticated, )
-    # TODO? get_permissions(self):
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return (AllowAny(), )
+        return self.permission_classes
 
     def get_serializer_class(self):
         return self.serializer_class
@@ -40,6 +43,10 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting = serializer.save(writer=user)
         data_to_show = serializer.data
         data_to_show['title'] = titlename
+
+        if not user.userprofile.first_posted_at:
+            user.userprofile.first_posted_at = timezone.now()
+        
         return Response(data_to_show, status=status.HTTP_201_CREATED)
         
     # GET /postings/{posting_id}/
@@ -54,14 +61,18 @@ class PostingViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         user = request.user
         data = request.data
-        posting = get_posting(pk)
-
+        try:
+            posting = get_posting(pk)
+        except Posting.DoesNotExist:
+            raise PostingDoesNotExistException()
+        
         if posting.writer != user:
             raise UserNotAuthorizedException()
         
         serializer = PostingUpdateSerializer(posting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.update(posting, serializer.validated_data)
+        
         data_to_show = serializer.data
         data_to_show['title'] = posting.title.name
         return Response(data_to_show)
@@ -75,3 +86,5 @@ class PostingViewSet(viewsets.GenericViewSet):
             raise UserNotAuthorizedException()
         posting.delete()
         return Response(status=status.HTTP_200_OK)     
+
+    

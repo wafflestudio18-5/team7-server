@@ -7,9 +7,9 @@ from posting.models import Posting
 from title.models import Title
 from written.error_codes import *
 from user.serializers import SmallUserSerializer
+from django.utils import timezone
 
 class PostingSerializer(serializers.ModelSerializer):
-    # title = serializers.SerializerMethodField()
     title = serializers.CharField()
     writer = serializers.SerializerMethodField(allow_null=True)
     content = serializers.CharField(style={'base_template': 'textarea.html'})
@@ -25,6 +25,7 @@ class PostingSerializer(serializers.ModelSerializer):
             'content',
             'alignment',
             'is_public',
+            'created_at',
         )
 
     def validate(self, data):
@@ -33,7 +34,11 @@ class PostingSerializer(serializers.ModelSerializer):
         if data.get('content') is None:
             raise ContentIsEmptyException
         data_copy = data
-        title = Title.objects.get(name=data['title'])
+        try:
+            title = Title.objects.get(name=data['title'])
+        except Title.DoesNotExist:
+            title = Title.objects.create(name=data.get('title'), 
+                    created_at=timezone.now(), updated_at=timezone.now(), is_official=False)
         data_copy['title'] = Title.objects.get(name=data['title'])
         return data_copy
 
@@ -47,7 +52,6 @@ class PostingSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
-        
 
 class PostingRetrieveSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
@@ -55,7 +59,8 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
     content = serializers.CharField(style={'base_template': 'textarea.html'})
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
     is_public = serializers.BooleanField(default=False)
-    
+    created_at = serializers.DateTimeField()
+
     class Meta:
         model = Posting
         fields = (
@@ -65,6 +70,7 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
             'content',
             'alignment',
             'is_public',
+            'created_at',
         )
 
     def get_writer(self, posting):
@@ -73,6 +79,32 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
+
+class PostingDictSerializer(serializers.ModelSerializer):
+    writer = serializers.SerializerMethodField()
+    content = serializers.CharField(style={'base_template': 'textarea.html'})
+    alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
+    is_public = serializers.BooleanField(default=False)
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        model = Posting
+        fields = (
+            'id',
+            'writer',
+            'content',
+            'alignment',
+            'is_public',
+            'created_at',
+        )
+
+    def get_writer(self, posting):
+        if type(posting) == dict:
+            try:
+                writer = User.objects.get(pk=posting['writer_id'])
+            except User.DoesNotExist:
+                return None
+        return SmallUserSerializer(writer, context=self.context).data
 
 class PostingUpdateSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
