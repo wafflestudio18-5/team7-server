@@ -18,12 +18,12 @@ def get_posting(posting_id):
 class PostingViewSet(viewsets.GenericViewSet):
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
+    permission_classes = (IsAuthenticated(), )
 
-    def get_serializer_class(self):
-        return self.serializer_class
-
-    # TODO? permission_classes = (IsAuthenticated, )
-    # TODO? get_permissions(self):
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return (AllowAny(), )
+        return self.permission_classes
 
     def get_serializer_class(self):
         return self.serializer_class
