@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from title.models import Title
-from title.serializers import TitleSerializer, TitleUpdateSerializer
+from title.serializers import TitleSerializer, TitleSmallSerializer, TitleUpdateSerializer
 from posting.models import Posting
-from posting.serializers import PostingRetrieveSerializer
+from posting.serializers import PostingRetrieveSerializer, PostingDictSerializer
 from django.utils import timezone
 from written.error_codes import *
 from django.db import connection
@@ -43,12 +43,11 @@ class TitleViewSet(viewsets.GenericViewSet):
     def list(self, request):
         # query with time, official, name, order
         time = request.query_params.get('time', 'all')
-        official = request.query_params.get('official', 'all')
+        only_official = request.query_params.get('only_official', False)
         query = request.query_params.get('query', '')
         order = request.query_params.get('order', 'recent')
         
-        only_official = False
-        if official.lower() == 'true':
+        if only_official and only_official.lower() == 'true':
             only_official = True
 
         date_now = timezone.now()
@@ -106,7 +105,7 @@ class TitleViewSet(viewsets.GenericViewSet):
             raise TitleDoesNotExistException()
 
         page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else 5
+            'page_size') else 8
 
         params.append(page_size)
         raw_query += ' LIMIT %s'
@@ -114,7 +113,7 @@ class TitleViewSet(viewsets.GenericViewSet):
         with connection.cursor() as cursor:
             cursor.execute(raw_query, params)
             titles = dict_fetch_all(cursor)
-        titles_data = self.get_serializer(titles, many=True).data
+        titles_data = TitleSmallSerializer(titles, many=True).data
         
         # SET RETURN VALUE: 'cursor'
         if len(titles) > 0:
@@ -171,6 +170,7 @@ class TitleViewSet(viewsets.GenericViewSet):
             FROM posting_posting AS posting_table
             WHERE id < %s
             AND title_id=%s
+            AND is_public=1
             LIMIT %s
         '''
         params = [my_cursor, title.id, page_size]
@@ -178,7 +178,8 @@ class TitleViewSet(viewsets.GenericViewSet):
         with connection.cursor() as cursor:
             cursor.execute(raw_query, params)
             postings = dict_fetch_all(cursor)
-        postings_data = postings
+        # postings_data = postings
+        postings_data = PostingDictSerializer(postings, many=True).data
 
         # SET RETURN VALUE: 'cursor'
         if len(postings) > 0:

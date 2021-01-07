@@ -55,8 +55,11 @@ class PostingViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         user = request.user
         data = request.data
-        posting = get_posting(pk)
-
+        try:
+            posting = get_posting(pk)
+        except Posting.DoesNotExist:
+            raise PostingDoesNotExistException()
+        
         if posting.writer != user:
             raise UserNotAuthorizedException()
         

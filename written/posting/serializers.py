@@ -80,6 +80,31 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
     def get_title(self, posting):
         return posting.title.name
 
+class PostingDictSerializer(serializers.ModelSerializer):
+    writer = serializers.SerializerMethodField()
+    content = serializers.CharField(style={'base_template': 'textarea.html'})
+    alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
+    is_public = serializers.BooleanField(default=False)
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        model = Posting
+        fields = (
+            'id',
+            'writer',
+            'content',
+            'alignment',
+            'is_public',
+            'created_at',
+        )
+
+    def get_writer(self, posting):
+        if type(posting) == dict:
+            try:
+                writer = User.objects.get(pk=posting['writer_id'])
+            except User.DoesNotExist:
+                return None
+        return SmallUserSerializer(writer, context=self.context).data
 
 class PostingUpdateSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
