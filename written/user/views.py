@@ -230,7 +230,10 @@ class UserViewSet(viewsets.GenericViewSet):
     # list of writers
     @action(detail=False, methods=['GET'], url_path='subscribed')
     def list_of_subscribed(self, request):
-        DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        try:
+            DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
         DEFAULT_PAGE_SIZE = 10
 
         user_id = request.user.id
@@ -276,7 +279,10 @@ class UserViewSet(viewsets.GenericViewSet):
     # list of subscribers
     @action(detail=False, methods=['GET'], url_path='subscriber')
     def list_of_subscriber(self, request):
-        DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        try:
+            DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
         DEFAULT_PAGE_SIZE = 10
 
         user_id = request.user.id
