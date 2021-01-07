@@ -169,7 +169,7 @@ class UserViewSet(viewsets.GenericViewSet):
             cursor.execute(pagination_query)
             rows = dict_fetch_all(cursor)
         postings = []
-        for i in range(len(rows) - 1):
+        for i in range(min(len(rows), page_size)):
             row = rows[i]
             writer = {"id": row['user_id'], "nickname": row['nickname']}
             postings.append({"id": row["id"], "title": row["name"], "writer": writer,
@@ -195,7 +195,7 @@ class UserViewSet(viewsets.GenericViewSet):
             raise UserDoesNotExistException()
         sb = get_subscription(subscriber_id, pk)
         if sb is None:
-            Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
+            sb = Subscription.objects.create(subscriber_id=subscriber_id, writer_id=pk, is_active=False)
         if sb.is_active:  # if True -> error
             raise AlreadySubscribedException()
         sb.is_active = True
