@@ -41,6 +41,10 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting = serializer.save(writer=user)
         data_to_show = serializer.data
         data_to_show['title'] = titlename
+
+        if not user.userprofile.first_posted_at:
+            user.userprofile.first_posted_at = timezone.now()
+        
         return Response(data_to_show, status=status.HTTP_201_CREATED)
         
     # GET /postings/{posting_id}/
