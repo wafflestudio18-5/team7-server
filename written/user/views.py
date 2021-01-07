@@ -116,11 +116,18 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):
-        user = request.user if pk == 'me' else self.get_object()
+        try:
+            if pk == "me":
+                user = request.user
+            else:
+                user = User.objects.get(id=pk)
+        except User.DoseNotExist:
+            raise UserDoesNotExistException()
         data = self.get_serializer(user).data
-        data["count_public_postings"] = user.postings.count()
-        data["count_all_postings"] = user.postings.count()
-        return Response()
+        data["count_public_postings"] = user.postings.filter(is_public=True).count()
+        if pk == "me":
+            data["count_all_postings"] = user.postings.count()
+        return Response(data, status=status.HTTP_200_OK)
 
     # PUT /users/me/
     def update(self, request, pk=None):

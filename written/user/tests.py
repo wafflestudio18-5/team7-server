@@ -108,6 +108,84 @@ class PostUserTestCase(TestCase):
         self.assertEqual(profile.facebook_id, "1367486803610262")
 
 
+class GetUserTestCase(TestCase):
+    client = Client()
+
+    @patch("user.views.check_token", mocked_check_token)
+    def setUp(self):
+        response = self.client.post(
+            '/users/',
+            json.dumps({
+                "facebookid": "1",
+                "access_token": "1",
+                "nickname": "1",
+            }),
+            content_type='application/json'
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.token_1 = "Token " + data["access_token"]
+        self.id_1 = data["user"]["id"]
+
+        response = self.client.post(
+            '/users/',
+            json.dumps({
+                "facebookid": "2",
+                "access_token": "2",
+                "nickname": "2",
+            }),
+            content_type='application/json'
+        )
+        data = response.json()
+        self.token_2 = "Token " + data["access_token"]
+
+        Title.objects.create(name="1", is_official=True)
+
+        for i in range(20):
+            response = self.client.post(
+                '/postings/',
+                json.dumps({
+                    "title": "1",
+                    "content": f"{i}",
+                    "alignment": "LEFT",
+                    "is_public": False
+                }),
+                content_type='application/json',
+                HTTP_AUTHORIZATION=self.token_1
+            )
+        for i in range(20):
+            response = self.client.post(
+                '/postings/',
+                json.dumps({
+                    "title": "1",
+                    "content": f"{i}",
+                    "alignment": "LEFT",
+                    "is_public": True
+                }),
+                content_type='application/json',
+                HTTP_AUTHORIZATION=self.token_1
+            )
+
+    def test_get_user_me(self):
+        response = self.client.get(
+            '/users/me/',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token_1
+        )
+        data = response.json()
+        self.assertEqual(data["count_public_postings"], 20)
+        self.assertEqual(data["count_all_postings"], 40)
+
+    def test_get_user_id(self):
+        response = self.client.get(
+            f'/users/{self.id_1}/',
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token_2
+        )
+        data = response.json()
+        self.assertEqual(data["count_public_postings"], 20)
+
+
 class PutUserMeTestCase(TestCase):
     client = Client()
     token = ""
