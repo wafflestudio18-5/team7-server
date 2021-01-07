@@ -116,8 +116,25 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):
-        user = request.user if pk == 'me' else self.get_object()
-        return Response(self.get_serializer(user).data)
+        try:
+            if pk == "me":
+                user = request.user
+            else:
+                user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            raise UserDoesNotExistException()
+        data = self.get_serializer(user).data
+        data["count_public_postings"] = user.postings.filter(is_public=True).count()
+        if pk == "me":
+            data["count_all_postings"] = user.postings.count()
+        else:
+            try:
+                Subscription.objects.get(subscriber=request.user, writer=user)
+                subscribing = True
+            except Subscription.DoesNotExist:
+                subscribing = False
+            data["subscribing"] = subscribing
+        return Response(data, status=status.HTTP_200_OK)
 
     # PUT /users/me/
     def update(self, request, pk=None):
@@ -220,7 +237,10 @@ class UserViewSet(viewsets.GenericViewSet):
     # list of writers
     @action(detail=False, methods=['GET'], url_path='subscribed')
     def list_of_subscribed(self, request):
-        DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        try:
+            DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
         DEFAULT_PAGE_SIZE = 10
 
         user_id = request.user.id
@@ -266,7 +286,10 @@ class UserViewSet(viewsets.GenericViewSet):
     # list of subscribers
     @action(detail=False, methods=['GET'], url_path='subscriber')
     def list_of_subscriber(self, request):
-        DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        try:
+            DEFAULT_CURSOR = Subscription.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
         DEFAULT_PAGE_SIZE = 10
 
         user_id = request.user.id
