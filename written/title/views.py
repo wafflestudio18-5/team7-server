@@ -17,11 +17,6 @@ from django.db import connection
 # GET /titles/{title_id}/
 # DELETE /titles/{title_id}/
 
-def get_title(title_id):
-    try:
-        return Title.objects.get(pk=title_id)
-    except Title.DoesNotExist:
-        return None
 
 # from shchoi94
 def dict_fetch_all(cursor):
@@ -156,9 +151,9 @@ class TitleViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings(self, request, pk=None):
         try:
-            title = get_title(pk)
+            title = Title.objects.get(pk=pk)
         except Title.DoesNotExist:
-            raise TitleDoesNotExistException()
+           raise TitleDoesNotExistException()
         
         my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
             'cursor') else Posting.objects.last().id + 1
