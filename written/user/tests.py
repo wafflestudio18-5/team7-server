@@ -125,7 +125,7 @@ class PutUserMeTestCase(TestCase):
         )
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.token = data["access_token"]
+        self.token = "Token " + data["access_token"]
 
         user_count = User.objects.count()
         self.assertEqual(user_count, 1)
@@ -189,7 +189,7 @@ class GetUserPostingsTestCase(TestCase):
             content_type='application/json'
         )
         data = response.json()
-        self.token = data["access_token"]
+        self.token = "Token " + data["access_token"]
         self.id = data["user"]["id"]
 
         Title.objects.create(name="1", is_official=True)
@@ -202,6 +202,7 @@ class GetUserPostingsTestCase(TestCase):
                 "title": "1",
                 "content": "1",
                 "alignment": "LEFT",
+                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
@@ -212,6 +213,7 @@ class GetUserPostingsTestCase(TestCase):
                 "title": "2",
                 "content": "1",
                 "alignment": "CENTER",
+                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
@@ -222,6 +224,7 @@ class GetUserPostingsTestCase(TestCase):
                 "title": "2",
                 "content": "2",
                 "alignment": "CENTER",
+                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
@@ -232,6 +235,7 @@ class GetUserPostingsTestCase(TestCase):
                 "title": "3",
                 "content": "1",
                 "alignment": "CENTER",
+                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
@@ -242,6 +246,7 @@ class GetUserPostingsTestCase(TestCase):
                 "title": "3",
                 "content": "2",
                 "alignment": "CENTER",
+                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
