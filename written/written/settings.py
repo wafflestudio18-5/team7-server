@@ -132,5 +132,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'written.error_codes.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'written.error_codes.custom_exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    )
 }

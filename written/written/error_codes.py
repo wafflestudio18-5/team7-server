@@ -89,6 +89,12 @@ class UserAlreadySignedUpException(WrittenException):
     message = "User already signed up"
 
 
+class UserNotSignedUpException(WrittenException):
+    status_code = 400
+    error_code = 10006
+    message = "Not signed up"
+
+
 # 20000 Postings
 class TitleDoesNotExistException(WrittenException):
     status_code = 400
