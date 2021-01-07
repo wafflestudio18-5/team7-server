@@ -117,7 +117,10 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/me/  GET /users/{user_id}/
     def retrieve(self, request, pk=None):
         user = request.user if pk == 'me' else self.get_object()
-        return Response(self.get_serializer(user).data)
+        data = self.get_serializer(user).data
+        data["count_public_postings"] = user.postings.count()
+        data["count_all_postings"] = user.postings.count()
+        return Response()
 
     # PUT /users/me/
     def update(self, request, pk=None):
