@@ -165,41 +165,36 @@ class TitleViewSet(viewsets.GenericViewSet):
         page_size = int(request.query_params.get('page_size')) if request.query_params.get(
             'page_size') else 2
 
-        raw_query = '''
+        raw_query = f'''
             SELECT * 
             FROM posting_posting AS posting_table
-            WHERE id < %s
-            AND title_id=%s
+            WHERE id < {my_cursor}
+            AND title_id={title.id}
             AND is_public=1
-            LIMIT %s
+            ORDER BY id DESC
+            LIMIT {page_size + 1};
         '''
-        params = [my_cursor, title.id, page_size]
 
         with connection.cursor() as cursor:
-            cursor.execute(raw_query, params)
+            cursor.execute(raw_query)
             postings = dict_fetch_all(cursor)
-        # postings_data = postings
-        postings_data = PostingDictSerializer(postings, many=True).data
-
-        # SET RETURN VALUE: 'cursor'
-        if len(postings) > 0:
-            posting_id = postings[-1]['id']
-            result_cursor = Posting.objects.get(pk=posting_id).id
-        else:
-            result_cursor = my_cursor
 
         # SET RETURN VALUE: 'has_next'
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM title_title WHERE id < %s",
-                           [result_cursor])
-            next_rows = dict_fetch_all(cursor)
-        if len(next_rows) > 0:
+        if len(postings) == page_size+1:
             has_next = True
+            del postings[-1]
         else:
             has_next = False
 
-        return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': result_cursor}
+        # SET RETURN VALUE: 'cursor'
+        if has_next:
+            next_cursor = postings[-1]['id']
+        else:
+            next_cursor = None
+                        
+        postings_data = PostingDictSerializer(postings, many=True).data
 
+        return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': next_cursor}
         return Response(return_data)
 
         
