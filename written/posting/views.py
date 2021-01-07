@@ -5,9 +5,11 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from posting.models import Posting
 from posting.serializers import PostingSerializer, PostingRetrieveSerializer, PostingUpdateSerializer
+from subscription.models import Subscription
 from title.models import Title
 from written.error_codes import *
 from django.utils import timezone
+
 
 def get_posting(posting_id):
     try:
@@ -67,9 +69,12 @@ class PostingViewSet(viewsets.GenericViewSet):
         if posting.writer != user:
             raise UserNotAuthorizedException()
         
+        was_public = posting.is_public
         serializer = PostingUpdateSerializer(posting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.update(posting, serializer.validated_data)
+        if was_public and serializer.validated_data['is_public'] == False:
+            Subscription.objects.filter()
         data_to_show = serializer.data
         data_to_show['title'] = posting.title.name
         return Response(data_to_show)

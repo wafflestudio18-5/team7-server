@@ -74,8 +74,18 @@ class TitleViewSet(viewsets.GenericViewSet):
             
         
         # concatenate MySQL statements and params for SQL statements
-        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
-            'cursor') else Title.objects.last().id + 1
+        try:
+            my_cursor = int(request.GET['cursor'])
+        except KeyError:
+            if Title.objects.exists():
+                my_cursor = Title.objects.last().id + 1
+            else:
+                my_cursor = 0
+        try:
+            page_size = int(request.GET['page_size'])
+        except KeyError:
+            page_size = self.TITLES_PAGE_SIZE_DEFAULT
+
         raw_query = '''
             SELECT * 
             FROM title_title
@@ -109,9 +119,6 @@ class TitleViewSet(viewsets.GenericViewSet):
             raw_query += ' ORDER BY created_at ASC'
         else:
             raise TitleDoesNotExistException()
-
-        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else self.TITLES_PAGE_SIZE_DEFAULT
 
         params.append(page_size+1)
         raw_query += ' LIMIT %s'
@@ -161,11 +168,22 @@ class TitleViewSet(viewsets.GenericViewSet):
             title = Title.objects.get(pk=pk)
         except Title.DoesNotExist:
            raise TitleDoesNotExistException()
-        
-        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
-            'cursor') else Posting.objects.last().id + 1
-        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-            'page_size') else self.POSTINGS_PAGE_SIZE_DEFAULT
+        try:
+            my_cursor = int(request.GET['cursor'])
+        except KeyError:
+            if Posting.objects.exists():
+                my_cursor = Posting.objects.last().id + 1
+            else:
+                my_cursor = 0
+        try:
+            page_size = int(request.GET['page_size'])
+        except KeyError:
+            page_size = self.POSTINGS_PAGE_SIZE_DEFAULT
+
+        # my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+        #     'cursor') else Posting.objects.last().id + 1
+        # page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+        #     'page_size') else self.POSTINGS_PAGE_SIZE_DEFAULT
 
         raw_query = f'''
             SELECT * 
