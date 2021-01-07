@@ -71,12 +71,21 @@ class PostingViewSet(viewsets.GenericViewSet):
         data = request.data
         posting = get_posting(pk)
 
+        if not bool(data.get['is_public']) and posting.is_public:
+            make_private = True
+        else:
+            make_private = False
+
         if posting.writer != user:
             raise UserNotAuthorizedException()
 
         serializer = PostingUpdateSerializer(posting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.update(posting, serializer.validated_data)
+
+        if make_private:
+            Scrap.objects.filter(posting_id=posting.id).delete()
+
         data_to_show = serializer.data
         data_to_show['title'] = posting.title.name
         return Response(data_to_show)
@@ -91,13 +100,12 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting.delete()
         return Response(status=status.HTTP_200_OK)
 
-
-# API Scrap===============================================================================
-# POST postings/{posting_id}/scrap/
-# POST postings/{posting_id}/unscrap/
-# GET postings/scrapped/
-# =========================================================================================
-# POST postings/{posting_id}/scrap
+    # API Scrap===============================================================================
+    # POST postings/{posting_id}/scrap/
+    # POST postings/{posting_id}/unscrap/
+    # GET postings/scrapped/
+    # =========================================================================================
+    # POST postings/{posting_id}/scrap
     @action(detail=True, methods=['POST'], url_path='scrap')
     def scrap(self, request, pk):
         user_id = request.user.id
@@ -105,13 +113,14 @@ class PostingViewSet(viewsets.GenericViewSet):
             posting = Posting.objects.get(pk=pk)
         except Posting.DoesNotExist:
             raise PostingDoesNotExistException()
+        if not posting.is_public:
+            raise PostingDoesNotExistException()
         try:
             Scrap.objects.get(user_id=user_id, posting_id=posting.id)
             raise AlreadyScrappedException()
         except Scrap.DoesNotExist:
             Scrap.objects.create(user_id=user_id, posting_id=posting.id)
         return Response(status=status.HTTP_200_OK)
-
 
     # POST postings/{posting_id}/unscrap
     @action(detail=True, methods=['POST'], url_path='unscrap')
@@ -128,11 +137,13 @@ class PostingViewSet(viewsets.GenericViewSet):
             raise AlreadyUnscrappedException()
         return Response(status=status.HTTP_200_OK)
 
-
     # GET postings/scrapped/
     @action(detail=False, methods=['GET'], url_path='scrapped')
     def scrapped(self, request):
-        DEFAULT_CURSOR = Scrap.objects.last().id + 1
+        try:
+            DEFAULT_CURSOR = Scrap.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
         DEFAULT_PAGE_SIZE = 5
 
         user_id = request.user.id
