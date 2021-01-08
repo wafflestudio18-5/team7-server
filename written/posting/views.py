@@ -71,7 +71,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         data = request.data
         posting = get_posting(pk)
 
-        if not bool(data.get['is_public']) and posting.is_public:
+        if data.get['is_public'] is not None and not bool(data.get['is_public']) and posting.is_public:
             make_private = True
         else:
             make_private = False
@@ -100,11 +100,13 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting.delete()
         return Response(status=status.HTTP_200_OK)
 
-    # API Scrap===============================================================================
+    # ==API Scrap===============================================================================
     # POST postings/{posting_id}/scrap/
     # POST postings/{posting_id}/unscrap/
     # GET postings/scrapped/
-    # =========================================================================================
+    # ==API Subscription========================================================================
+    # GET postings/subscribed/
+    # ==========================================================================================
     # POST postings/{posting_id}/scrap
     @action(detail=True, methods=['POST'], url_path='scrap')
     def scrap(self, request, pk):
@@ -154,8 +156,10 @@ class PostingViewSet(viewsets.GenericViewSet):
 
         # PAGINATION QUERY
         pagination_query = f'''
-                    SELECT posting.id, title.name as 'title',posting.content,scrap.created_at as 'scrapped_at', scrap.id as 'scrap_id'
+                    SELECT posting.id, posting.writer_id as 'writer', title.name as 'title',posting.content, 
+                    posting.alignment, posting.created_at, posting.is_public, scrap.id as 'scrap_id', userprofile.nickname as 'nickname'
                     FROM  posting_posting AS posting
+                    INNER JOIN user_userprofile userprofile on posting.writer_id = userprofile.user_id
                     INNER JOIN title_title title on posting.title_id = title.id
                     INNER JOIN scrap_scrap scrap on posting.id = scrap.posting_id
                     WHERE scrap.id < {my_cursor} AND scrap.user_id = {user_id}
@@ -179,7 +183,59 @@ class PostingViewSet(viewsets.GenericViewSet):
         else:
             next_cursor = None
         for i in range(len(rows)):
+            rows[i]['writer'] = {'id': rows[i]['writer'], 'nickname': rows[i]['nickname']}
             del rows[i]['scrap_id']
+            del rows[i]['nickname']
+
+        data = {'stored_postings': rows, 'has_next': has_next, 'cursor': next_cursor}
+        return Response(data, status=status.HTTP_200_OK)
+
+    # GET postings/subscribed/
+    @action(detail=False, methods=['GET'], url_path='subscribed')
+    def subscribed(self, request):
+        try:
+            DEFAULT_CURSOR = Posting.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
+        DEFAULT_PAGE_SIZE = 5
+
+        user_id = request.user.id
+        my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
+            'cursor') else DEFAULT_CURSOR
+        page_size = int(request.query_params.get('page_size')) if request.query_params.get(
+            'page_size') else DEFAULT_PAGE_SIZE
+
+        # PAGINATION QUERY
+        pagination_query = f'''
+                        SELECT posting.id, posting.writer_id as 'writer', title.name as 'title',posting.content, 
+                        posting.alignment, posting.created_at, posting.is_public, userprofile.nickname as 'nickname'
+                        FROM  posting_posting AS posting
+                        INNER JOIN subscription_subscription subscription on subscription.subscriber_id = {user_id} and subscription.writer_id = posting.writer_id
+                        INNER JOIN user_userprofile userprofile on posting.writer_id = userprofile.user_id
+                        INNER JOIN title_title title on posting.title_id = title.id
+                        WHERE posting.id < {my_cursor} 
+                        ORDER BY posting.id DESC
+                        LIMIT {page_size + 1};
+                        '''
+        with connection.cursor() as cursor:
+            cursor.execute(pagination_query)
+            rows = dict_fetch_all(cursor)
+
+        # set 'has_next', delete surplus row
+        if len(rows) == page_size + 1:
+            has_next = True
+            del rows[-1]
+        else:
+            has_next = False
+
+        # set 'cursor', delete field 'scrap_id'
+        if has_next:
+            next_cursor = rows[-1]['id']
+        else:
+            next_cursor = None
+        for i in range(len(rows)):
+            rows[i]['writer'] = {'id': rows[i]['writer'], 'nickname': rows[i]['nickname']}
+            del rows[i]['nickname']
 
         data = {'stored_postings': rows, 'has_next': has_next, 'cursor': next_cursor}
         return Response(data, status=status.HTTP_200_OK)
