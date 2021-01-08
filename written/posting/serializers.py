@@ -14,7 +14,7 @@ class PostingSerializer(serializers.ModelSerializer):
     writer = serializers.SerializerMethodField(allow_null=True)
     content = serializers.CharField(style={'base_template': 'textarea.html'})
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
-    # is_public = serializers.SerializerMethodField()
+    is_public = serializers.SerializerMethodField()
     
     class Meta:
         model = Posting
@@ -24,7 +24,7 @@ class PostingSerializer(serializers.ModelSerializer):
             'writer',
             'content',
             'alignment',
-            # 'is_public',
+            'is_public',
             'created_at',
         )
 
@@ -52,6 +52,9 @@ class PostingSerializer(serializers.ModelSerializer):
 
     def get_title(self, posting):
         return posting.title.name
+    
+    def get_is_public(self, posting):
+        return False
 
 class PostingRetrieveSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
