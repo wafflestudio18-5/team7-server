@@ -157,9 +157,51 @@ class TitleViewSet(viewsets.GenericViewSet):
     def today(self, request):
         try:
             title = Title.objects.get(pk=19)
-        except:
-            raise TitleDoesNotExistException()
-        return Response(self.get_serializer(title).data)
+        except Title.DoesNotExist:
+           raise TitleDoesNotExistException()
+
+        try:
+            my_cursor = int(request.GET['cursor'])
+        except KeyError:
+            if Posting.objects.filter(title=title.id).exists():
+                my_cursor = Posting.objects.last().id + 1
+            else:
+                my_cursor = 0
+        try:
+            page_size = int(request.GET['page_size'])
+        except KeyError:
+            page_size = self.POSTINGS_PAGE_SIZE_DEFAULT
+
+        raw_query = f'''
+            SELECT * 
+            FROM posting_posting AS posting_table
+            WHERE id < {my_cursor}
+            AND title_id={title.id}
+            AND is_public=1
+            ORDER BY id DESC
+            LIMIT {page_size + 1};
+        '''
+        with connection.cursor() as cursor:
+            cursor.execute(raw_query)
+            postings = dict_fetch_all(cursor)
+
+        # SET RETURN VALUE: 'has_next'
+        if len(postings) == page_size+1:
+            has_next = True
+            del postings[-1]
+        else:
+            has_next = False
+
+        # SET RETURN VALUE: 'cursor'
+        if has_next:
+            next_cursor = postings[-1]['id']
+        else:
+            next_cursor = None
+                        
+        postings_data = PostingDictSerializer(postings, many=True).data
+
+        return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': next_cursor}
+        return Response(return_data)
 
     # GET /titles/{title_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
@@ -180,11 +222,6 @@ class TitleViewSet(viewsets.GenericViewSet):
             page_size = int(request.GET['page_size'])
         except KeyError:
             page_size = self.POSTINGS_PAGE_SIZE_DEFAULT
-
-        # my_cursor = int(request.query_params.get('cursor')) if request.query_params.get(
-        #     'cursor') else Posting.objects.last().id + 1
-        # page_size = int(request.query_params.get('page_size')) if request.query_params.get(
-        #     'page_size') else self.POSTINGS_PAGE_SIZE_DEFAULT
 
         raw_query = f'''
             SELECT * 
