@@ -224,7 +224,7 @@ class PostingViewSet(viewsets.GenericViewSet):
                         INNER JOIN subscription_subscription subscription on subscription.subscriber_id = {user_id} and subscription.writer_id = posting.writer_id
                         INNER JOIN user_userprofile userprofile on posting.writer_id = userprofile.user_id
                         INNER JOIN title_title title on posting.title_id = title.id
-                        WHERE posting.id < {my_cursor} 
+                        WHERE posting.id < {my_cursor} and posting.is_public = True 
                         ORDER BY posting.id DESC
                         LIMIT {page_size + 1};
                         '''

@@ -158,6 +158,7 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings_of_user(self, request, pk):
+        request_user_id = request.user.id
         try:
             user = User.objects.get(id=pk)
         except User.DoseNotExist:
@@ -178,7 +179,7 @@ class UserViewSet(viewsets.GenericViewSet):
                            f'INNER JOIN title_title AS title ' \
                            f'INNER JOIN user_userprofile AS profile ' \
                            f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
-                           f'WHERE user.id = {user.id} AND posting.id > {cursor} AND posting.is_public = True ' \
+                           f'WHERE user.id = {user.id} AND posting.id > {cursor} ' \
                            f'ORDER BY posting.id ASC ' \
                            f'LIMIT {page_size + 1};'
 
@@ -186,6 +187,17 @@ class UserViewSet(viewsets.GenericViewSet):
             cursor.execute(pagination_query)
             rows = dict_fetch_all(cursor)
         postings = []
+        del_index = []
+
+        if request_user_id != pk:
+            for i in range(len(rows)):
+                if not rows[i]['is_public']:
+                    del_index.append(i)
+
+        if len(del_index) > 0:
+            for i in range(len(del_index)):
+                del rows[del_index[i]]
+
         for i in range(min(len(rows), page_size)):
             row = rows[i]
             writer = {"id": row['user_id'], "nickname": row['nickname']}
