@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'subscription',
     'posting',
     'user',
+    'scrap',
 ]
 
 MIDDLEWARE = [

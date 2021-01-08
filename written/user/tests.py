@@ -356,7 +356,7 @@ class GetUserPostingsTestCase(TestCase):
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data["cursor"], 2)
+        self.assertGreater(data["cursor"], page_size-1)
         self.assertEqual(data["has_next"], True)
 
         cursor = data["cursor"]
@@ -368,7 +368,7 @@ class GetUserPostingsTestCase(TestCase):
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data["cursor"], 4)
+        self.assertGreater(data["cursor"], 2*page_size-1)
         self.assertEqual(data["has_next"], True)
 
         cursor = data["cursor"]
