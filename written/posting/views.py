@@ -7,8 +7,11 @@ from django.contrib.auth.models import User
 from posting.models import Posting
 from posting.serializers import PostingSerializer, PostingRetrieveSerializer, PostingUpdateSerializer
 from scrap.models import Scrap
+from subscription.models import Subscription
 from title.models import Title
 from written.error_codes import *
+from django.utils import timezone
+
 
 from django.db import connection
 
@@ -32,12 +35,12 @@ def get_posting(posting_id):
 class PostingViewSet(viewsets.GenericViewSet):
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
+    permission_classes = (IsAuthenticated(), )
 
-    def get_serializer_class(self):
-        return self.serializer_class
-
-    # TODO? permission_classes = (IsAuthenticated, )
-    # TODO? get_permissions(self):
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return (AllowAny(), )
+        return self.permission_classes
 
     def get_serializer_class(self):
         return self.serializer_class
@@ -55,6 +58,10 @@ class PostingViewSet(viewsets.GenericViewSet):
         posting = serializer.save(writer=user)
         data_to_show = serializer.data
         data_to_show['title'] = titlename
+
+        if not user.userprofile.first_posted_at:
+            user.userprofile.first_posted_at = timezone.now()
+        
         return Response(data_to_show, status=status.HTTP_201_CREATED)
 
     # GET /postings/{posting_id}/
@@ -69,7 +76,11 @@ class PostingViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         user = request.user
         data = request.data
-        posting = get_posting(pk)
+
+         try:
+            posting = get_posting(pk)
+        except Posting.DoesNotExist:
+            raise PostingDoesNotExistException()
 
         if data.get['is_public'] is not None and not bool(data.get['is_public']) and posting.is_public:
             make_private = True
@@ -239,3 +250,4 @@ class PostingViewSet(viewsets.GenericViewSet):
 
         data = {'stored_postings': rows, 'has_next': has_next, 'cursor': next_cursor}
         return Response(data, status=status.HTTP_200_OK)
+
