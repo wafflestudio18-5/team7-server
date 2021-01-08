@@ -158,7 +158,6 @@ class UserViewSet(viewsets.GenericViewSet):
     # GET /users/{user_id}/postings/
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings_of_user(self, request, pk):
-        request_user_id = request.user.id
         try:
             user = User.objects.get(id=pk)
         except User.DoseNotExist:
@@ -173,37 +172,32 @@ class UserViewSet(viewsets.GenericViewSet):
         except KeyError:
             page_size = 10
 
+        if str(request.user.id) == pk:
+            check_public = ''
+        else:
+            check_public = 'AND posting.is_public = True '
+
         pagination_query = f'SELECT posting.id AS id, user.id AS user_id, nickname, content, alignment, name, is_public, posting.created_at AS created_at ' \
                            f'FROM posting_posting AS posting ' \
                            f'INNER JOIN auth_user AS user ' \
                            f'INNER JOIN title_title AS title ' \
                            f'INNER JOIN user_userprofile AS profile ' \
                            f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
-                           f'WHERE user.id = {user.id} AND posting.id > {cursor} ' \
+                           f'WHERE user.id = {user.id} AND posting.id > {cursor} {check_public}' +  \
                            f'ORDER BY posting.id ASC ' \
                            f'LIMIT {page_size + 1};'
 
         with connection.cursor() as cursor:
             cursor.execute(pagination_query)
             rows = dict_fetch_all(cursor)
+
         postings = []
-        del_index = []
-
-        if request_user_id != pk:
-            for i in range(len(rows)):
-                if not rows[i]['is_public']:
-                    del_index.append(i)
-
-        if len(del_index) > 0:
-            for i in range(len(del_index)):
-                del rows[del_index[i]]
-
         for i in range(min(len(rows), page_size)):
             row = rows[i]
             writer = {"id": row['user_id'], "nickname": row['nickname']}
             postings.append({"id": row["id"], "title": row["name"], "writer": writer,
                              "content": row["content"], "alignment": row["alignment"],
-                             "id_public": row["is_public"], "created_at": row["created_at"]})
+                             "is_public": row["is_public"], "created_at": row["created_at"]})
         if len(rows) == page_size + 1:
             next_cursor = rows[len(rows) - 2]['id']
             has_next = True

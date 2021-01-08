@@ -461,7 +461,7 @@ class GetUsersSubscribedTestCase(TestCase):
         self.assertEqual(data["cursor"], None)
 
 
-class GetUsersSubscribedTestCase(TestCase):
+class GetUsersSubscriberTestCase(TestCase):
     client = Client()
     token = []
     id = []
@@ -491,7 +491,7 @@ class GetUsersSubscribedTestCase(TestCase):
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_get_user_subscribe(self):
+    def test_get_user_subscriber(self):
         page_size = 5
         response = self.client.get(
             f'/users/subscriber/?page_size={page_size}',
