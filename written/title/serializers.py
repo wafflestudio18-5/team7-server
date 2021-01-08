@@ -32,7 +32,7 @@ class TitleSerializer(serializers.ModelSerializer):
         return data
 
     def get_postings(self, title):            
-        postings = title.postings.all()
+        postings = title.postings.filter(is_public=True)
         return PostingRetrieveSerializer(postings, many=True).data
 
 
