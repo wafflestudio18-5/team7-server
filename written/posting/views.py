@@ -77,7 +77,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         user = request.user
         data = request.data
 
-         try:
+        try:
             posting = get_posting(pk)
         except Posting.DoesNotExist:
             raise PostingDoesNotExistException()
