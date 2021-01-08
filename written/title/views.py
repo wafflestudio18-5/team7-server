@@ -156,7 +156,7 @@ class TitleViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['GET'], url_path='today')
     def today(self, request):
         try:
-            title = Title.objects.last()
+            title = Title.objects.get(pk=19)
         except:
             raise TitleDoesNotExistException()
         return Response(self.get_serializer(title).data)
