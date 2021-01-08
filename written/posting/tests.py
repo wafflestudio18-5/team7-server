@@ -57,8 +57,7 @@ class PostPostingTestCase(TestCase):
         self.assertEqual(data['title'], 'title1')
         self.assertEqual(data['content'], 'This is content of posting1')
         self.assertEqual(data['alignment'], 'LEFT')
-        self.assertEqual(data['is_public'], True)
-
+        
         for i in range(20):
             response = self.client.post(
                 '/postings/',
@@ -191,7 +190,6 @@ class PutPostingTest(TestCase):
         self.assertEqual(data['title'], 'title1')
         self.assertEqual(data['writer']['nickname'], '1')
         self.assertEqual(data['content'], 'This is content of posting1')
-        self.assertEqual(data['is_public'], False)
 
         response = self.client.put(
             f'/postings/{last_posting_id}/',
@@ -222,7 +220,6 @@ class PutPostingTest(TestCase):
         self.assertEqual(data['title'], 'title1')
         self.assertEqual(data['writer']['nickname'], '1')
         self.assertEqual(data['content'], 'This is content of posting1')
-        self.assertEqual(data['is_public'], False)
 
         response = self.client.put(
             f'/postings/{last_posting_id}/',
