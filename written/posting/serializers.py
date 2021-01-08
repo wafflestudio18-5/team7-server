@@ -14,7 +14,7 @@ class PostingSerializer(serializers.ModelSerializer):
     writer = serializers.SerializerMethodField(allow_null=True)
     content = serializers.CharField(style={'base_template': 'textarea.html'})
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
-    is_public = serializers.BooleanField(default=False)
+    # is_public = serializers.SerializerMethodField()
     
     class Meta:
         model = Posting
@@ -24,7 +24,7 @@ class PostingSerializer(serializers.ModelSerializer):
             'writer',
             'content',
             'alignment',
-            'is_public',
+            # 'is_public',
             'created_at',
         )
 
@@ -82,6 +82,7 @@ class PostingRetrieveSerializer(serializers.ModelSerializer):
 
 class PostingDictSerializer(serializers.ModelSerializer):
     writer = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
     content = serializers.CharField(style={'base_template': 'textarea.html'})
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS)
     is_public = serializers.BooleanField(default=False)
@@ -91,6 +92,7 @@ class PostingDictSerializer(serializers.ModelSerializer):
         model = Posting
         fields = (
             'id',
+            'title',
             'writer',
             'content',
             'alignment',
@@ -105,7 +107,15 @@ class PostingDictSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 return None
         return SmallUserSerializer(writer, context=self.context).data
-
+    
+    def get_title(self, posting):
+        if type(posting) == dict:
+            try:
+                title = Title.objects.get(pk=posting['title_id'])
+            except Title.DoesNotExist:
+                return None
+        return title.name
+    
 class PostingUpdateSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField(allow_null=True)
