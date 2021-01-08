@@ -160,11 +160,22 @@ class GetUserTestCase(TestCase):
                     "title": "1",
                     "content": f"{i}",
                     "alignment": "LEFT",
+                }),
+                content_type='application/json',
+                HTTP_AUTHORIZATION=self.token_1
+            )
+            posting_id = response.json()['id']
+            response = self.client.put(
+                f'/postings/{posting_id}/',
+                json.dumps({
                     "is_public": True
                 }),
                 content_type='application/json',
                 HTTP_AUTHORIZATION=self.token_1
             )
+            data = response.json()
+            self.assertEqual(data["is_public"], True)
+
 
     def test_get_user_me(self):
         response = self.client.get(
@@ -301,12 +312,30 @@ class GetUserPostingsTestCase(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
         )
+        posting_id = response.json()['id']
+        response = self.client.put(
+            f'/postings/{posting_id}/',
+            json.dumps({
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
         response = self.client.post(
             '/postings/',
             json.dumps({
                 "title": "2",
                 "content": "1",
                 "alignment": "CENTER",
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        posting_id = response.json()['id']
+        response = self.client.put(
+            f'/postings/{posting_id}/',
+            json.dumps({
                 "is_public": True
             }),
             content_type='application/json',
@@ -323,6 +352,35 @@ class GetUserPostingsTestCase(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
         )
+        posting_id = response.json()['id']
+        response = self.client.put(
+            f'/postings/{posting_id}/',
+            json.dumps({
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        response = self.client.post(
+            '/postings/',
+            json.dumps({
+                "title": "2",
+                "content": "2",
+                "alignment": "CENTER",
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        posting_id = response.json()['id']
+        response = self.client.put(
+            f'/postings/{posting_id}/',
+            json.dumps({
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
         response = self.client.post(
             '/postings/',
             json.dumps({
@@ -334,13 +392,21 @@ class GetUserPostingsTestCase(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
         )
+        posting_id = response.json()['id']
+        response = self.client.put(
+            f'/postings/{posting_id}/',
+            json.dumps({
+                "is_public": True
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
         response = self.client.post(
             '/postings/',
             json.dumps({
                 "title": "3",
                 "content": "2",
                 "alignment": "CENTER",
-                "is_public": True
             }),
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
@@ -358,6 +424,7 @@ class GetUserPostingsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(data["cursor"], page_size-1)
         self.assertEqual(data["has_next"], True)
+
 
         cursor = data["cursor"]
         page_size = 2

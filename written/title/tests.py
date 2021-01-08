@@ -266,12 +266,23 @@ class GetTitlePostingsTestCase(TestCase):
                     "title": "title1",
                     "content": postingcontent,
                     "alignment": "LEFT",
-                    "is_public": True   
                 }),
                 content_type='application/json',
                 HTTP_AUTHORIZATION=self.token
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            
+            posting_id = response.json()['id']
+            response = self.client.put(
+                f'/postings/{posting_id}/',
+                json.dumps({
+                    "is_public": True
+                }),
+                content_type='application/json',
+                HTTP_AUTHORIZATION=self.token
+            )
+            data = response.json()
+            self.assertEqual(data["is_public"], True)
 
     def test_valid_title_postings(self):
         title1_id = Title.objects.get(name='title1').id

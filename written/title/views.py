@@ -168,10 +168,11 @@ class TitleViewSet(viewsets.GenericViewSet):
             title = Title.objects.get(pk=pk)
         except Title.DoesNotExist:
            raise TitleDoesNotExistException()
+
         try:
             my_cursor = int(request.GET['cursor'])
         except KeyError:
-            if Posting.objects.exists():
+            if Posting.objects.filter(title=title.id).exists():
                 my_cursor = Posting.objects.last().id + 1
             else:
                 my_cursor = 0
@@ -194,7 +195,6 @@ class TitleViewSet(viewsets.GenericViewSet):
             ORDER BY id DESC
             LIMIT {page_size + 1};
         '''
-
         with connection.cursor() as cursor:
             cursor.execute(raw_query)
             postings = dict_fetch_all(cursor)
