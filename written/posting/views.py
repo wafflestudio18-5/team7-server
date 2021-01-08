@@ -82,7 +82,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         except Posting.DoesNotExist:
             raise PostingDoesNotExistException()
 
-        if data.get['is_public'] is not None and not bool(data.get['is_public']) and posting.is_public:
+        if data.get('is_public') is not None and not bool(data.get('is_public')) and posting.is_public:
             make_private = True
         else:
             make_private = False

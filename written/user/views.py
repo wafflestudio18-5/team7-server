@@ -159,6 +159,10 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['GET'], url_path='postings')
     def postings_of_user(self, request, pk):
         try:
+            DEFAULT_CURSOR = Posting.objects.last().id + 1
+        except AttributeError:
+            DEFAULT_CURSOR = 0
+        try:
             user = User.objects.get(id=pk)
         except User.DoseNotExist:
             raise UserDoesNotExistException()
@@ -166,7 +170,7 @@ class UserViewSet(viewsets.GenericViewSet):
         try:
             cursor = int(request.GET['cursor'])
         except KeyError:
-            cursor = 0
+            cursor = DEFAULT_CURSOR
         try:
             page_size = int(request.GET['page_size'])
         except KeyError:
@@ -183,8 +187,8 @@ class UserViewSet(viewsets.GenericViewSet):
                            f'INNER JOIN title_title AS title ' \
                            f'INNER JOIN user_userprofile AS profile ' \
                            f'ON posting.writer_id = user.id AND user.id = profile.user_id AND posting.title_id = title.id ' \
-                           f'WHERE user.id = {user.id} AND posting.id > {cursor} {check_public}' +  \
-                           f'ORDER BY posting.id ASC ' \
+                           f'WHERE user.id = {user.id} AND posting.id < {cursor} {check_public}' +  \
+                           f'ORDER BY posting.id DESC ' \
                            f'LIMIT {page_size + 1};'
 
         with connection.cursor() as cursor:
@@ -197,7 +201,7 @@ class UserViewSet(viewsets.GenericViewSet):
             writer = {"id": row['user_id'], "nickname": row['nickname']}
             postings.append({"id": row["id"], "title": row["name"], "writer": writer,
                              "content": row["content"], "alignment": row["alignment"],
-                             "is_public": row["is_public"], "created_at": row["created_at"]})
+                             "is_public": bool(row["is_public"]), "created_at": row["created_at"]})
         if len(rows) == page_size + 1:
             next_cursor = rows[len(rows) - 2]['id']
             has_next = True

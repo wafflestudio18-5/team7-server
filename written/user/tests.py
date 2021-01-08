@@ -413,16 +413,14 @@ class GetUserPostingsTestCase(TestCase):
         )
 
     def test_get_user_posting(self):
-        cursor = 0
         page_size = 2
         response = self.client.get(
-            f'/users/{self.id}/postings/?cursor={cursor}&page_size={page_size}',
+            f'/users/{self.id}/postings/?page_size={page_size}',
             content_type='application/json',
             HTTP_AUTHORIZATION=self.token
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(data["cursor"], page_size-1)
         self.assertEqual(data["has_next"], True)
 
 
@@ -435,7 +433,6 @@ class GetUserPostingsTestCase(TestCase):
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(data["cursor"], 2*page_size-1)
         self.assertEqual(data["has_next"], True)
 
         cursor = data["cursor"]
@@ -447,7 +444,6 @@ class GetUserPostingsTestCase(TestCase):
         )
         data = response.data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data["cursor"], None)
         self.assertEqual(data["has_next"], False)
 
 
