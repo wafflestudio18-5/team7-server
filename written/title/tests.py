@@ -196,6 +196,16 @@ class GetTitleTodayTestCase(TestCase):
         self.token = "Token " + data["access_token"]
         self.id = data["user"]["id"]
 
+        response = self.client.post(
+            '/titles/',
+            json.dumps({
+                "name": "첫 눈"
+            }),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=self.token
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
         for i in range (30):
             titlename = "title" + str(i)
             response = self.client.post(
@@ -216,8 +226,7 @@ class GetTitleTodayTestCase(TestCase):
         )
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        last_title = Title.objects.last()
-        self.assertEqual(data['id'], last_title.id)
+        self.assertEqual(data['title'], '첫 눈')
 
     def test_invalid_titles_today(self):
         response = self.client.get(

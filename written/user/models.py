@@ -6,5 +6,5 @@ class UserProfile(models.Model):
     facebook_id = models.CharField(max_length=20, unique=True, default="")
     nickname = models.CharField(max_length=16, unique=True)
     description = models.CharField(max_length=100, blank=True, default="")
-    first_posted_at = models.TimeField(null=True, default=None)
+    first_posted_at = models.DateTimeField(null=True, default=None)
 
