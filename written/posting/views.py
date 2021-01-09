@@ -60,7 +60,7 @@ class PostingViewSet(viewsets.GenericViewSet):
         data_to_show['title'] = titlename
 
         if user.userprofile.first_posted_at is None:
-            user.userprofile.first_posted_at = timezone.now()
+            user.userprofile.first_posted_at = posting.created_at
             user.userprofile.save()
 
         return Response(data_to_show, status=status.HTTP_201_CREATED)
