@@ -196,6 +196,7 @@ class PostingViewSet(viewsets.GenericViewSet):
             next_cursor = None
         for i in range(len(rows)):
             rows[i]['writer'] = {'id': rows[i]['writer'], 'nickname': rows[i]['nickname']}
+            rows[i]['is_public'] =bool(rows[i]['is_public'])
             del rows[i]['scrap_id']
             del rows[i]['nickname']
 

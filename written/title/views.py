@@ -251,7 +251,7 @@ class TitleViewSet(viewsets.GenericViewSet):
                         
         postings_data = PostingDictSerializer(postings, many=True).data
 
-        return_data = {'postings': postings_data, 'has_next': has_next, 'cursor': next_cursor}
+        return_data = {'title': title.name, 'postings': postings_data, 'has_next': has_next, 'cursor': next_cursor}
         return Response(return_data)
 
         

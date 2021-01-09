@@ -125,6 +125,7 @@ class PostingUpdateSerializer(serializers.ModelSerializer):
     content = serializers.CharField(style={'base_template': 'textarea.html'}, allow_null=True)
     alignment = serializers.ChoiceField(Posting.ALIGNMENTS, allow_null=True)
     is_public = serializers.BooleanField(default=False, allow_null=True)
+    created_at = serializers.DateTimeField()
     
     class Meta:
         model = Posting
@@ -135,6 +136,7 @@ class PostingUpdateSerializer(serializers.ModelSerializer):
             'content',
             'alignment',
             'is_public',
+            'created_at',
         )
             
     #     return data
