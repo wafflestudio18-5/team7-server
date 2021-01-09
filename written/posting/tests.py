@@ -71,6 +71,9 @@ class PostPostingTestCase(TestCase):
                 HTTP_AUTHORIZATION=self.token_1
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        user = User.objects.get(pk=self.id_1)
+        self.assertIsNotNone(user.userprofile.first_posted_at)
 
 
     def test_invalid_post_postings_empty_content(self):
